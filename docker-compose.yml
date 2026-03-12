@@ -1,6 +1,7 @@
 services:
   mindcraft:
     build: .
+    network_mode: "host"
     environment:
       SETTINGS_JSON: |
         {"auto_open_ui": false}
