@@ -12,18 +12,9 @@
         stdenv = pkgs.clangStdenv;
       } {
         buildInputs = with pkgs; [
-          nodejs_20
+          nodejs_22
           uv
           python3
-
-          # libxkbcommon
-          # libX11
-          # libxcb
-          # libXcursor
-          # libXext
-          # libXi
-          # libXrandr
-          # libXinerama
         ];
         LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath (with pkgs; [
           libxkbcommon
