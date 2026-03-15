@@ -8,6 +8,9 @@ import threading
 import time
 
 import socketio
+from socketio.exceptions import ConnectionError as SocketIOConnectionError
+
+from .node_runtime import resolve_node_executable
 
 
 class MindcraftRuntime:
@@ -63,8 +66,9 @@ class MindcraftRuntime:
             )
         )
 
+        node_executable = resolve_node_executable(os.environ)
         args = [
-            "node",
+            node_executable,
             node_script_path,
             "--mindserver_port",
             str(port),
@@ -97,7 +101,7 @@ class MindcraftRuntime:
             self.sio.connect(f"http://localhost:{port}", wait_timeout=startup_timeout)
             self.connected = True
             print(f"Connected to MindServer at localhost:{port}.")
-        except socketio.exceptions.ConnectionError as error:
+        except SocketIOConnectionError as error:
             self.shutdown()
             raise RuntimeError(f"Failed to connect to MindServer: {error}") from error
 

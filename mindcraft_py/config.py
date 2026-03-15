@@ -2,6 +2,8 @@ import json
 import os
 import subprocess
 
+from .node_runtime import resolve_node_executable
+
 
 def resolve_settings(cli_args=None, env=None):
     if cli_args is None:
@@ -19,7 +21,8 @@ def resolve_settings(cli_args=None, env=None):
         )
     )
 
-    command = ["node", script_path, *cli_args]
+    node_executable = resolve_node_executable(env)
+    command = [node_executable, script_path, *cli_args]
     completed = subprocess.run(
         command,
         capture_output=True,
