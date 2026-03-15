@@ -1,6 +1,6 @@
 import sys
 
-from mindcraft_py.runner import run_from_cli_args
+from .runner import run_from_cli_args
 
 
 def main():

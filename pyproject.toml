@@ -1,7 +1,21 @@
 [project]
 name = "mindcraft"
 version = "0.1.0"
-description = "Add your description here"
-readme = "README.md"
-requires-python = ">=3.13"
-dependencies = []
+description = "Python runtime for mindcraft"
+readme = "README_PYTHON.md"
+requires-python = ">=3.11"
+dependencies = [
+    "boto3==1.37.11",
+    "botocore==1.37.11",
+    "pandas==2.2.3",
+    "prettytable==3.16.0",
+    "python-socketio[client]>=5.13.0,<6",
+    "tqdm==4.62.3",
+]
+
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+package = false

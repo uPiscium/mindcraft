@@ -1,27 +1,33 @@
-import mindcraft
+import copy
 import json
 import os
 
-# Initialize Mindcraft, starting the Node.js server
-# This will also connect to the MindServer via websockets
-mindcraft.init()
+from mindcraft_py import create_agent, init, wait
 
-# Get the directory of the current script
-script_dir = os.path.dirname(os.path.abspath(__file__))
-profile_path = os.path.abspath(os.path.join(script_dir, '..', '..', 'andy.json'))
 
-# Load agent settings from a JSON file
-try:
-    with open(profile_path, 'r') as f:
-        profile_data = json.load(f)
-    
-    settings = {"profile": profile_data}
-    mindcraft.create_agent(settings)
+def main():
+    init()
 
-    settings_copy = settings.copy()
-    settings_copy['profile']['name'] = 'andy2'
-    mindcraft.create_agent(settings_copy)
-except FileNotFoundError:
-    print(f"Error: Could not find andy.json at {profile_path}")
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    profile_path = os.path.abspath(
+        os.path.join(script_dir, "..", "..", "agents", "Andy.json")
+    )
 
-mindcraft.wait()
+    try:
+        with open(profile_path, "r", encoding="utf-8") as file_obj:
+            profile_data = json.load(file_obj)
+
+        settings = {"profile": profile_data}
+        create_agent(settings)
+
+        settings_copy = copy.deepcopy(settings)
+        settings_copy["profile"]["name"] = "andy2"
+        create_agent(settings_copy)
+    except FileNotFoundError:
+        print(f"Error: Could not find profile at {profile_path}")
+
+    wait()
+
+
+if __name__ == "__main__":
+    main()
