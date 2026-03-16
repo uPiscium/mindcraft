@@ -99,16 +99,15 @@ wait()
 - 基本設定は既存の`settings.js`を使用します。
 - `--profiles`, `--task_path`, `--task_id` はPython版でも利用できます。
 - 環境変数オーバーライド（`MINECRAFT_PORT`, `MINDSERVER_PORT` など）も既存仕様と互換です。
-- 設定解決は`src/mindcraft-py/resolve-settings.js`（Node側）で実施します。
+- 設定解決は`mindcraft_py/config.py`で実施し、`settings.js`をPython側で読み取ります。
 
 ## 主要ファイル
 
 - `main.py`: Python版CLIエントリ
 - `mindcraft_py/runner.py`: 起動フロー（設定解決→profile読込→agent作成→待機）
 - `mindcraft_py/runtime.py`: Node起動・MindServer接続・create-agent呼び出し
-- `mindcraft_py/config.py`: Nodeブリッジ経由で設定JSONを取得
+- `mindcraft_py/config.py`: `settings.js`とCLI/envオーバーライドをPython側で解決
 - `src/mindcraft-py/init-mindcraft.js`: MindServer起動
-- `src/mindcraft-py/resolve-settings.js`: CLI/envを含む設定解決
 
 ## よくある問題
 
