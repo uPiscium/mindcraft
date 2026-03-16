@@ -3,10 +3,13 @@ from mindcraft_py.commands import (
     CommandSpec,
     PythonCommandRegistry,
     contains_command,
+    execute_query,
     get_command_docs,
+    get_default_registry,
     parse_command_message,
     trunc_command_message,
 )
+from mindcraft_py.js_command_specs import extract_js_command_specs
 
 EXPECTED_DEFAULT_COMMANDS = {
     "!stats": {
@@ -87,26 +90,46 @@ def test_command_docs_respect_blocked_actions():
 
 
 def test_default_registry_matches_expected_command_specs():
-    registry = PythonCommandRegistry()
-    for command_name, command_spec in EXPECTED_DEFAULT_COMMANDS.items():
-        registry.register(
-            CommandSpec(
-                name=command_name,
-                description=command_spec["description"],
-                params={
-                    param_name: CommandParam(type=param_type, description=description)
-                    for param_name, (param_type, description) in command_spec[
-                        "params"
-                    ].items()
-                }
-                or None,
-            )
-        )
+    actual_specs = {
+        command.name: command for command in get_default_registry().commands()
+    }
 
-    expected_docs = registry.get_command_docs()
-    actual_docs = get_command_docs()
+    assert set(actual_specs) == set(EXPECTED_DEFAULT_COMMANDS)
 
-    assert actual_docs == expected_docs
+    for command_name, expected_spec in EXPECTED_DEFAULT_COMMANDS.items():
+        actual_spec = actual_specs[command_name]
+        assert actual_spec.description == expected_spec["description"]
+
+        actual_params = actual_spec.params or {}
+        expected_params = expected_spec["params"]
+        assert set(actual_params) == set(expected_params)
+
+        for param_name, (param_type, description) in expected_params.items():
+            actual_param = actual_params[param_name]
+            assert actual_param.type == param_type
+            assert actual_param.description == description
+
+
+def test_default_registry_matches_javascript_specs():
+    registry = get_default_registry()
+    js_specs = extract_js_command_specs(registry.command_names())
+
+    actual_specs = {command.name: command for command in registry.commands()}
+    assert set(actual_specs) == set(js_specs)
+
+    for command_name, actual_spec in actual_specs.items():
+        js_spec = js_specs[command_name]
+        assert actual_spec.description == js_spec.description
+        assert actual_spec.kind == js_spec.kind
+
+        actual_params = actual_spec.params or {}
+        js_params = js_spec.params or {}
+        assert set(actual_params) == set(js_params)
+
+        for param_name, actual_param in actual_params.items():
+            js_param = js_params[param_name]
+            assert actual_param.type == js_param.type
+            assert actual_param.description == js_param.description
 
 
 def test_default_registry_parses_all_expected_command_names():
@@ -183,3 +206,34 @@ def test_rejects_invalid_boolean_argument():
         assert "Param 'enabled' must be of type boolean" in str(error)
     else:
         raise AssertionError("Expected ValueError for invalid boolean argument")
+
+
+class FakeRuntime:
+    def __init__(self):
+        self.calls = []
+
+    def execute_query_command(self, agent_name, message, timeout=60):
+        self.calls.append(
+            {"agent_name": agent_name, "message": message, "timeout": timeout}
+        )
+        return f"query:{agent_name}:{message}:{timeout}"
+
+
+def test_execute_query_uses_runtime_bridge():
+    runtime = FakeRuntime()
+
+    result = execute_query(runtime, "Andy", "!stats() trailing text", timeout=15)
+
+    assert result == "query:Andy:!stats:15"
+    assert runtime.calls == [{"agent_name": "Andy", "message": "!stats", "timeout": 15}]
+
+
+def test_execute_query_rejects_non_query_commands():
+    runtime = FakeRuntime()
+
+    try:
+        execute_query(runtime, "Andy", '!goal("collect logs")')
+    except ValueError as error:
+        assert str(error) == "!goal is not a query command."
+    else:
+        raise AssertionError("Expected ValueError for non-query command execution")

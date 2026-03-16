@@ -118,8 +118,9 @@ wait()
 
 - `mindcraft_py/commands.py` に、Python側の command registry の最小実装があります。
 - 現時点では `!stats`, `!inventory`, `!nearbyBlocks`, `!entities`, `!stop`, `!goal`, `!newAction` の仕様をPython側で管理しています。
-- この段階では command docs 生成とコマンド文字列のパースが中心で、mineflayer を使う実処理本体は引き続きJavaScript側です。
-- 今後は query 系コマンドから順に、Python registry と JavaScript 実行アダプタをつなぐ予定です。
+- `mindcraft_py/js_command_specs.py` で `src/agent/commands/actions.js` と `src/agent/commands/queries.js` から仕様を抽出し、Python側定義との自動比較に使っています。
+- query 系の一部は Python registry から MindServer 経由で JavaScript 実行アダプタを呼べるようになっています。
+- mineflayer を使う実処理本体は引き続きJavaScript側ですが、query 実行入口は Python から呼び出せます。
 
 ## 主要ファイル
 
@@ -128,7 +129,10 @@ wait()
 - `mindcraft_py/runtime.py`: Node起動・MindServer接続・create-agent呼び出し
 - `mindcraft_py/config.py`: `settings.js`とCLI/envオーバーライドをPython側で解決
 - `mindcraft_py/commands.py`: Python側の command registry、コマンド docs 生成、引数パース
+- `mindcraft_py/js_command_specs.py`: JavaScript側コマンド仕様の抽出と比較用ローダー
 - `src/mindcraft-py/init-mindcraft.js`: MindServer起動
+- `src/agent/mindserver_proxy.js`: Pythonからの query 実行要求を受ける JavaScript 側アダプタ
+- `src/mindcraft/mindserver.js`: query 実行要求の中継
 - `tests/test_python_commands.py`: Python command registry のテスト
 - `justfile`: Python向けのテスト・lint・format コマンド
 
@@ -155,6 +159,8 @@ uv run --group dev ruff format .
 - 引数型変換とドメイン検証
 - command docs 生成
 - Python側で管理しているデフォルトコマンド仕様の回帰チェック
+- JavaScript側 `src/agent/commands/*.js` との自動比較
+- Python query bridge のユニットテスト
 
 `just`を使う場合は以下でも実行できます。
 

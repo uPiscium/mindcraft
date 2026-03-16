@@ -27,6 +27,8 @@ class CommandSpec:
     name: str
     description: str
     params: dict[str, CommandParam] | None = None
+    kind: str = "query"
+    bridge: str | None = None
 
 
 @dataclass(frozen=True)
@@ -44,6 +46,12 @@ class PythonCommandRegistry:
 
     def register(self, command):
         self._commands[command.name] = command
+
+    def command_names(self):
+        return tuple(self._commands.keys())
+
+    def commands(self):
+        return tuple(self._commands.values())
 
     def get(self, command_name):
         if not command_name.startswith("!"):
@@ -147,6 +155,22 @@ class PythonCommandRegistry:
         docs.append("*")
         return "\n".join(docs)
 
+    def execute_query(self, runtime, agent_name, message, timeout=60):
+        invocation = self.parse_message(message)
+        command = self.get(invocation.command_name)
+        if command is None:
+            raise ValueError(f"{invocation.command_name} is not a command.")
+        if command.kind != "query":
+            raise ValueError(f"{command.name} is not a query command.")
+        if command.bridge != "js":
+            raise ValueError(f"{command.name} does not have a JavaScript query bridge.")
+
+        return runtime.execute_query_command(
+            agent_name,
+            self.trunc_command_message(message),
+            timeout=timeout,
+        )
+
 
 def _parse_boolean(value):
     normalized = value.lower()
@@ -198,37 +222,26 @@ def create_default_registry():
             CommandSpec(
                 name="!stats",
                 description="Get your bot's location, health, hunger, and time of day.",
+                kind="query",
+                bridge="js",
             ),
             CommandSpec(
                 name="!inventory",
                 description="Get your bot's inventory.",
+                kind="query",
+                bridge="js",
             ),
             CommandSpec(
                 name="!nearbyBlocks",
                 description="Get the blocks near the bot.",
+                kind="query",
+                bridge="js",
             ),
             CommandSpec(
                 name="!entities",
                 description="Get the nearby players and entities.",
-            ),
-            CommandSpec(
-                name="!stop",
-                description=(
-                    "Force stop all actions and commands that are currently executing."
-                ),
-            ),
-            CommandSpec(
-                name="!goal",
-                description=(
-                    "Set a goal prompt to endlessly work towards with "
-                    "continuous self-prompting."
-                ),
-                params={
-                    "selfPrompt": CommandParam(
-                        type="string",
-                        description="The goal prompt.",
-                    )
-                },
+                kind="query",
+                bridge="js",
             ),
             CommandSpec(
                 name="!newAction",
@@ -245,6 +258,28 @@ def create_default_registry():
                         ),
                     )
                 },
+                kind="action",
+            ),
+            CommandSpec(
+                name="!stop",
+                description=(
+                    "Force stop all actions and commands that are currently executing."
+                ),
+                kind="action",
+            ),
+            CommandSpec(
+                name="!goal",
+                description=(
+                    "Set a goal prompt to endlessly work towards with "
+                    "continuous self-prompting."
+                ),
+                params={
+                    "selfPrompt": CommandParam(
+                        type="string",
+                        description="The goal prompt.",
+                    )
+                },
+                kind="action",
             ),
         ]
     )
@@ -269,3 +304,12 @@ def trunc_command_message(message):
 
 def parse_command_message(message):
     return get_default_registry().parse_message(message)
+
+
+def execute_query(runtime, agent_name, message, timeout=60):
+    return get_default_registry().execute_query(
+        runtime,
+        agent_name,
+        message,
+        timeout=timeout,
+    )

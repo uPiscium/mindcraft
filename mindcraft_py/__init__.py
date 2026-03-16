@@ -1,4 +1,9 @@
-from .commands import get_command_docs, get_default_registry, parse_command_message
+from .commands import (
+    execute_query,
+    get_command_docs,
+    get_default_registry,
+    parse_command_message,
+)
 from .runtime import MindcraftRuntime
 
 _default_runtime = MindcraftRuntime()
@@ -17,6 +22,10 @@ def create_agent(settings_json, timeout=60):
     return _default_runtime.create_agent(settings_json, timeout=timeout)
 
 
+def execute_query_command(agent_name, message, timeout=60):
+    return execute_query(_default_runtime, agent_name, message, timeout=timeout)
+
+
 def shutdown():
     _default_runtime.shutdown()
 
@@ -32,6 +41,8 @@ def get_runtime():
 __all__ = [
     "MindcraftRuntime",
     "create_agent",
+    "execute_query",
+    "execute_query_command",
     "get_command_docs",
     "get_default_registry",
     "get_runtime",

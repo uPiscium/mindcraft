@@ -110,6 +110,30 @@ class MindcraftRuntime:
             raise RuntimeError("Not connected to MindServer. Call init() first.")
 
         payload = copy.deepcopy(settings_json)
+        result = self._emit_with_callback("create-agent", payload, timeout=timeout)
+
+        if not result.get("success"):
+            error = result.get("error", "Unknown error")
+            raise RuntimeError(f"Error creating agent: {error}")
+
+        profile_name = payload.get("profile", {}).get("name", "<unknown>")
+        print(f"Agent '{profile_name}' created successfully")
+        return result
+
+    def execute_query_command(self, agent_name, message, timeout=60):
+        result = self._emit_with_callback(
+            "run-query-command",
+            {"agentName": agent_name, "message": message},
+            timeout=timeout,
+        )
+
+        if not result.get("success"):
+            error = result.get("error", "Unknown error")
+            raise RuntimeError(f"Error executing query command: {error}")
+
+        return result.get("result")
+
+    def _emit_with_callback(self, event_name, payload, timeout=60):
         done = threading.Event()
         result = {"success": False, "error": "No response received"}
 
@@ -118,16 +142,10 @@ class MindcraftRuntime:
                 result.update(response)
             done.set()
 
-        self.sio.emit("create-agent", payload, callback=callback)
+        self.sio.emit(event_name, payload, callback=callback)
         if not done.wait(timeout):
-            raise TimeoutError(f"create-agent callback timed out after {timeout}s")
+            raise TimeoutError(f"{event_name} callback timed out after {timeout}s")
 
-        if not result.get("success"):
-            error = result.get("error", "Unknown error")
-            raise RuntimeError(f"Error creating agent: {error}")
-
-        profile_name = payload.get("profile", {}).get("name", "<unknown>")
-        print(f"Agent '{profile_name}' created successfully")
         return result
 
     def shutdown(self):
