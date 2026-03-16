@@ -1,7 +1,7 @@
 import subprocess
 
 
-SUPPORTED_NODE_MAJORS = {18, 20}
+SUPPORTED_NODE_MAJORS = {18, 20, 22}
 
 
 def _parse_node_major(version_output):
@@ -23,7 +23,7 @@ def resolve_node_executable(env=None):
     if explicit_node:
         candidates.append(explicit_node)
 
-    candidates.extend(["node20", "node18", "node"])
+    candidates.extend(["node22", "node20", "node18", "node"])
 
     best_unsupported = None
     for candidate in candidates:
