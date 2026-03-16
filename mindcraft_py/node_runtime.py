@@ -1,6 +1,5 @@
 import subprocess
 
-
 SUPPORTED_NODE_MAJORS = {18, 20, 22}
 
 
