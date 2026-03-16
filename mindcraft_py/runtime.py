@@ -49,6 +49,29 @@ class MindcraftRuntime:
             time.sleep(0.2)
         return False
 
+    def _wait_for_any_port(self, hosts, port, timeout):
+        start = time.time()
+        while time.time() - start < timeout:
+            for host in hosts:
+                if self._is_port_open(host, port):
+                    return True
+            time.sleep(0.2)
+        return False
+
+    def _connect_socketio(self, port, startup_timeout):
+        errors = []
+        for host in ("localhost", "127.0.0.1"):
+            try:
+                self.sio.connect(f"http://{host}:{port}", wait_timeout=startup_timeout)
+                self.connected = True
+                print(f"Connected to MindServer at {host}:{port}.")
+                return
+            except SocketIOConnectionError as error:
+                errors.append(f"{host}: {error}")
+
+        error_text = "; ".join(errors) or "unknown connection error"
+        raise RuntimeError(f"Failed to connect to MindServer: {error_text}")
+
     def init(self, port=8080, host_public=True, auto_open_ui=True, startup_timeout=20):
         if self.process:
             return
@@ -91,19 +114,19 @@ class MindcraftRuntime:
 
         atexit.register(self.shutdown)
 
-        if not self._wait_for_port("127.0.0.1", port, startup_timeout):
-            self.shutdown()
-            raise RuntimeError(
-                f"MindServer did not start on port {port} within {startup_timeout}s"
+        if not self._wait_for_any_port(
+            ("127.0.0.1", "localhost"), port, min(startup_timeout, 5)
+        ):
+            print(
+                "MindServer port probe did not succeed in time; "
+                "attempting Socket.IO connection directly."
             )
 
         try:
-            self.sio.connect(f"http://localhost:{port}", wait_timeout=startup_timeout)
-            self.connected = True
-            print(f"Connected to MindServer at localhost:{port}.")
-        except SocketIOConnectionError as error:
+            self._connect_socketio(port, startup_timeout)
+        except RuntimeError as error:
             self.shutdown()
-            raise RuntimeError(f"Failed to connect to MindServer: {error}") from error
+            raise error
 
     def create_agent(self, settings_json, timeout=60):
         if not self.connected:

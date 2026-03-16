@@ -121,6 +121,7 @@ wait()
 - `mindcraft_py/js_command_specs.py` で `src/agent/commands/actions.js` と `src/agent/commands/queries.js` から仕様を抽出し、Python側定義との自動比較に使っています。
 - query 系の一部は Python registry から MindServer 経由で JavaScript 実行アダプタを呼べるようになっています。
 - mineflayer を使う実処理本体は引き続きJavaScript側ですが、query 実行入口は Python から呼び出せます。
+- `mock_client` を有効にすると、Minecraft を起動せずに mock agent で query bridge をテストできます。
 
 ## 主要ファイル
 
@@ -133,7 +134,9 @@ wait()
 - `src/mindcraft-py/init-mindcraft.js`: MindServer起動
 - `src/agent/mindserver_proxy.js`: Pythonからの query 実行要求を受ける JavaScript 側アダプタ
 - `src/mindcraft/mindserver.js`: query 実行要求の中継
+- `src/process/mock_agent_client.js`: Minecraft なしで接続できる mock agent client
 - `tests/test_python_commands.py`: Python command registry のテスト
+- `tests/test_mock_query_bridge.py`: mock client を使った query bridge の統合テスト
 - `justfile`: Python向けのテスト・lint・format コマンド
 
 ## よくある問題
@@ -161,6 +164,7 @@ uv run --group dev ruff format .
 - Python側で管理しているデフォルトコマンド仕様の回帰チェック
 - JavaScript側 `src/agent/commands/*.js` との自動比較
 - Python query bridge のユニットテスト
+- mock client を使った、Minecraft 非起動時の query bridge 統合テスト
 
 `just`を使う場合は以下でも実行できます。
 

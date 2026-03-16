@@ -7,7 +7,7 @@ export class AgentProcess {
         this.port = port;
     }
 
-    start(load_memory=false, init_message=null, count_id=0) {
+    async start(load_memory=false, init_message=null, count_id=0) {
         this.count_id = count_id;
         this.running = true;
 
@@ -60,7 +60,7 @@ export class AgentProcess {
         this.process.kill('SIGINT');
     }
 
-    forceRestart() {
+    async forceRestart() {
         if (this.running && this.process && !this.process.killed) {
             console.log(`Agent process for ${this.name} is still running. Attempting to force restart.`);
             
@@ -75,7 +75,7 @@ export class AgentProcess {
             });
             this.stop(); // sends SIGINT
         } else {
-             this.start(true, 'Agent process restarted.', this.count_id);
+             await this.start(true, 'Agent process restarted.', this.count_id);
         }
     }
 }
