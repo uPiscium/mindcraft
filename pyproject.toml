@@ -13,9 +13,27 @@ dependencies = [
     "tqdm==4.62.3",
 ]
 
+[dependency-groups]
+dev = [
+    "pytest>=8.3.5,<9",
+    "ruff>=0.11.2,<0.12",
+]
+
 [build-system]
 requires = ["hatchling>=1.27.0"]
 build-backend = "hatchling.build"
 
 [tool.uv]
 package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+include = ["main.py", "mindcraft_py/**/*.py", "tests/**/*.py"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]

@@ -10,6 +10,7 @@
         stdenv = pkgs.clangStdenv;
       } {
         buildInputs = with pkgs; [
+          just
           nodejs_22
           uv
           python3

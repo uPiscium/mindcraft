@@ -7,6 +7,7 @@
 - 起動フローと制御はPython（`main.py`, `mindcraft_py/`）で実行します。
 - Minecraft接続・mineflayer・botの実行はJavaScript側（既存実装）を利用します。
 - PythonはNode.jsブリッジを起動し、MindServer（Socket.IO）経由でエージェントを操作します。
+- 設定解決はPython側へ移しており、LLM向けコマンド仕様もPython側へ段階的に移行中です。
 
 ## 前提条件
 
@@ -32,10 +33,22 @@ npm install
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
+Nix環境を使う場合は、`flake.nix` に `just` も含めてあります。
+
+```bash
+nix develop
+```
+
 ### 3) Python依存を同期
 
 ```bash
 uv sync
+```
+
+開発用ツールも入れる場合は以下を利用します。
+
+```bash
+uv sync --group dev
 ```
 
 ### 4) APIキーを設定
@@ -101,13 +114,23 @@ wait()
 - 環境変数オーバーライド（`MINECRAFT_PORT`, `MINDSERVER_PORT` など）も既存仕様と互換です。
 - 設定解決は`mindcraft_py/config.py`で実施し、`settings.js`をPython側で読み取ります。
 
+## Pythonコマンド基盤の現状
+
+- `mindcraft_py/commands.py` に、Python側の command registry の最小実装があります。
+- 現時点では `!stats`, `!inventory`, `!nearbyBlocks`, `!entities`, `!stop`, `!goal`, `!newAction` の仕様をPython側で管理しています。
+- この段階では command docs 生成とコマンド文字列のパースが中心で、mineflayer を使う実処理本体は引き続きJavaScript側です。
+- 今後は query 系コマンドから順に、Python registry と JavaScript 実行アダプタをつなぐ予定です。
+
 ## 主要ファイル
 
 - `main.py`: Python版CLIエントリ
 - `mindcraft_py/runner.py`: 起動フロー（設定解決→profile読込→agent作成→待機）
 - `mindcraft_py/runtime.py`: Node起動・MindServer接続・create-agent呼び出し
 - `mindcraft_py/config.py`: `settings.js`とCLI/envオーバーライドをPython側で解決
+- `mindcraft_py/commands.py`: Python側の command registry、コマンド docs 生成、引数パース
 - `src/mindcraft-py/init-mindcraft.js`: MindServer起動
+- `tests/test_python_commands.py`: Python command registry のテスト
+- `justfile`: Python向けのテスト・lint・format コマンド
 
 ## よくある問題
 
@@ -117,6 +140,30 @@ wait()
   - `uv sync`を再実行してください。
 - Minecraftに接続できない
   - `settings.js`の`host`/`port`/`auth`、LAN公開ポート、Minecraftバージョンを確認してください。
+
+## テストと整形
+
+```bash
+uv run --group dev pytest
+uv run --group dev ruff check .
+uv run --group dev ruff format .
+```
+
+現在のPythonテストは `tests/test_python_commands.py` にあり、以下を確認します。
+
+- コマンド文字列のパース
+- 引数型変換とドメイン検証
+- command docs 生成
+- Python側で管理しているデフォルトコマンド仕様の回帰チェック
+
+`just`を使う場合は以下でも実行できます。
+
+```bash
+just test
+just lint
+just fmt
+just check
+```
 
 ## セキュリティ注意
 
