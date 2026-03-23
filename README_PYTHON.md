@@ -151,6 +151,7 @@ wait()
 - `tests/test_action_bridge_mock.py`: mock client を使った action bridge の統合テスト
 - `tests/test_multiagent_inventory_init.py`: multi-agent タスクの初期インベントリ確認
 - `tests/test_terminal_logging.py`: terminal log の tee 出力確認
+- `tests/test_ollama_client.js`: Ollama payload と timeout 処理の確認
 - `justfile`: Python向けのテスト・lint・format コマンド
 
 `just catalog` と `python -m mindcraft_py.catalog` 相当の生成処理は `mindcraft_py/catalog.py` にあります。
