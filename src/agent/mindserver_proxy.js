@@ -1,7 +1,8 @@
 import { io } from 'socket.io-client';
+import { executeCommand } from './commands/index.js';
 import convoManager from './conversation.js';
-import { setSettings } from './settings.js';
 import { getFullState } from './library/full_state.js';
+import { setSettings } from './settings.js';
 
 // agent's individual connection to the mindserver
 // always connect to localhost
@@ -76,6 +77,46 @@ class MindServerProxy {
             } catch (error) {
                 console.error('Error getting full state:', error);
                 callback(null);
+            }
+        });
+
+        this.socket.on('run-query-command', async (data, callback) => {
+            if (!this.agent) {
+                callback({ success: false, error: 'Agent is not initialized' });
+                return;
+            }
+
+            if (!data || data.agentName !== this.agent.name) {
+                callback({ success: false, error: 'Query command targeted the wrong agent' });
+                return;
+            }
+
+            try {
+                const result = await executeCommand(this.agent, data.message);
+                callback({ success: true, result });
+            } catch (error) {
+                console.error('Error executing query command:', error);
+                callback({ success: false, error: error.message ?? String(error) });
+            }
+        });
+
+        this.socket.on('run-action-command', async (data, callback) => {
+            if (!this.agent) {
+                callback({ success: false, error: 'Agent is not initialized' });
+                return;
+            }
+
+            if (!data || data.agentName !== this.agent.name) {
+                callback({ success: false, error: 'Action command targeted the wrong agent' });
+                return;
+            }
+
+            try {
+                const result = await executeCommand(this.agent, data.message);
+                callback({ success: true, result });
+            } catch (error) {
+                console.error('Error executing action command:', error);
+                callback({ success: false, error: error.message ?? String(error) });
             }
         });
 

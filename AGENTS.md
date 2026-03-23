@@ -1,191 +1,176 @@
 # AGENTS.md
 
-Practical instructions for agentic coding tools operating in this repository.
+Practical guidance for coding agents working in this repository.
 
-## Repository Overview
+## Overview
 
-- Runtime: Node.js ESM project (`"type": "module"`).
-- Main entrypoint: `main.js`.
-- Core implementation: `src/`.
-- Task/evaluation automation: `tasks/` (mostly Python).
-- Lint config: `eslint.config.js`.
-- No dedicated unit-test framework config found (no Jest/Vitest/Pytest config files).
+- `mindcraft` is primarily a Node.js ESM project with a Python runtime layer.
+- JavaScript owns Mineflayer, agent behavior, command execution, and MindServer.
+- Python owns the newer runtime wrapper, settings resolution, command-registry work, and tests under `tests/`.
+- Main JS entrypoint: `main.js`.
+- Main Python entrypoint: `main.py`.
+- Core JS code lives in `src/`.
+- Python runtime code lives in `mindcraft_py/`.
+- Automation and analysis scripts live in `tasks/`.
 
-## Setup
+## Environment Setup
 
-### Node environment
+- Node version: prefer `18` or `20` LTS per project docs.
+- Python version: `3.11+`.
+- Install Node dependencies with `npm install`.
+- Install Python dependencies with `uv sync` and `uv sync --group dev`.
+- If using Nix, `flake.nix` includes the core dev tools, including `just`; enter with `nix develop`.
 
-- Prefer Node `v18` or `v20` LTS (per README guidance).
+## Build And Run Commands
 
+- Standard JS runtime:
 ```bash
-npm install
 npm start
+node main.js
 ```
-
-`npm start` runs `node main.js`.
-
-### Python environment (evaluation scripts)
-
-`pyproject.toml` is minimal; practical dependencies are in `requirements.txt`.
-
+- Python runtime:
 ```bash
-conda create --name mindcraft python=3.11
-conda activate mindcraft
-pip install -r requirements.txt
+uv run python main.py
+uv run python -m mindcraft_py
 ```
-
-## Build, Lint, and Test Commands
-
-## Build / run commands
-
-No transpile step is required for app code.
-
+- Explicit profiles:
 ```bash
-npm install
-npm start
+node main.js --profiles ./agents/Andy.json ./agents/Bob.json
+uv run python main.py --profiles ./agents/Andy.json ./agents/Bob.json
+```
+- Single task:
+```bash
+node main.js --task_path tasks/basic/single_agent.json --task_id gather_oak_logs
+uv run python main.py --task_path tasks/basic/single_agent.json --task_id gather_oak_logs
+```
+- Docker:
+```bash
 docker build -t mindcraft .
 docker compose up --build
 ```
 
-## Lint commands
+## Lint Commands
 
-No npm lint script is defined; run ESLint directly:
+- JavaScript linting uses ESLint directly; there is no npm lint script.
+- `npx eslint .`
+- `npx eslint src main.js settings.js`
+- `npx eslint src/agent/agent.js`
 
+- Python linting uses Ruff.
+- `uv run --group dev ruff check .`
+- `uv run --group dev ruff check mindcraft_py tests`
+- `uv run --group dev ruff check tests/test_python_commands.py`
+
+## Format Commands
+
+- Python formatting also uses Ruff.
+- `uv run --group dev ruff format .`
+- `uv run --group dev ruff format mindcraft_py tests`
+- `uv run --group dev ruff format tests/test_mock_query_bridge.py`
+- Formatting check only: `uv run --group dev ruff format --check .`
+
+## Test Commands
+
+- Full Python suite: `uv run --group dev pytest`
+- Single Python test file:
 ```bash
-# full repository
-npx eslint .
-
-# common source scope
-npx eslint main.js settings.js src tasks
-
-# single-file lint
-npx eslint src/agent/agent.js
+uv run --group dev pytest tests/test_python_commands.py
+uv run --group dev pytest tests/test_mock_query_bridge.py
 ```
-
-## Test commands (single-test guidance)
-
-There is no formal test runner configured. Use integration-style validation.
-
-### Best single-test equivalent
-
+- Single test function:
 ```bash
-node main.js --task_path tasks/basic/single_agent.json --task_id gather_oak_logs
+uv run --group dev pytest tests/test_python_commands.py::test_default_registry_matches_javascript_specs
+uv run --group dev pytest tests/test_mock_query_bridge.py::test_mock_query_bridge_runs_without_minecraft
 ```
-
-### Run all tasks in one task file
-
+- Verbose single-test debug: `uv run --group dev pytest -vv tests/test_python_commands.py::test_execute_query_uses_runtime_bridge`
+- Representative JS integration validation: `node main.js --task_path tasks/basic/single_agent.json --task_id gather_oak_logs`
+- Python task helpers:
 ```bash
-python tasks/run_task_file.py --task_path tasks/single_agent/crafting_train.json
-```
-
-`run_task_file.py` iterates over all task IDs in the file.
-
-### Evaluate an existing results folder
-
-```bash
+python tasks/run_task_file.py --task_path tasks/basic/single_agent.json
 python tasks/evaluation_script.py --check experiments/<exp_folder>
 ```
 
-### Example benchmark run
+## Just Commands
 
-```bash
-python tasks/evaluation_script.py \
-  --task_path tasks/crafting_tasks/test_tasks/2_agent.json \
-  --model gpt-4o-mini \
-  --template_profile profiles/tasks/crafting_profile.json
-```
+- Prefer `just` for common Python checks: `just test`, `just lint`, `just fmt`, `just check`.
+- In Nix environments use `nix develop --command just check`.
 
-## Common Runtime Commands
+## Current Test Coverage Notes
 
-```bash
-# run with explicit profiles
-node main.js --profiles ./profiles/andy.json ./profiles/jill.json
+- `tests/test_python_commands.py` covers Python command parsing, docs generation, spec matching, and query-bridge unit behavior.
+- `tests/test_mock_query_bridge.py` covers Python-to-JS query bridge behavior without Minecraft running.
+- The mock path uses `mock_client` and does not validate true Mineflayer world behavior.
+- For real Mineflayer behavior, run a JS or Python task against a live Minecraft server/world.
 
-# run one specific task
-node main.js --task_path <task_file.json> --task_id <task_id>
-```
+## JavaScript Style
 
-Environment variable overrides read by `main.js`:
+- Use ESM `import` / `export` only.
+- Follow the existing semicolon style; ESLint requires semicolons.
+- Match the touched file's quote style, but many files use single quotes.
+- Prefer `const`; use `let` only when reassignment is necessary.
+- Keep imports at the top of the file and preserve local ordering unless there is a reason to change it.
+- Many JS files use 4-space indentation; match the file you are editing.
+- Use `camelCase` for variables and functions.
+- Use `PascalCase` for classes.
+- Preserve existing filename conventions such as `snake_case.js` where already used.
 
-- `MINECRAFT_PORT`
-- `MINDSERVER_PORT`
-- `PROFILES` (JSON array string)
-- `INSECURE_CODING`
-- `BLOCKED_ACTIONS` (JSON)
-- `MAX_MESSAGES`
-- `NUM_EXAMPLES`
-- `LOG_ALL`
+## Python Style
 
-## Code Style Guidelines
+- Follow Ruff defaults configured in `pyproject.toml`.
+- Target Python `3.11+` features only.
+- Keep lines within Ruff's configured width of `88`.
+- Sort imports in Ruff-compatible order.
+- Use `snake_case` for functions, variables, and module names.
+- Use `PascalCase` for classes.
+- Use dataclasses where the code already models structured records that way.
+- Keep CLI scripts explicit and simple; `argparse` is the established pattern.
+- Prefer `Path` or explicit path joins over fragile relative string handling.
 
-Derived from ESLint and existing repository conventions.
+## Types And Data Modeling
 
-## JavaScript / ESM
+- There is no TypeScript in the repo today; do not introduce TS unless explicitly requested.
+- In JS, use guard clauses and explicit runtime checks for external inputs.
+- In Python, use type hints when they improve clarity and match nearby code.
+- When mirroring JS concepts in Python, keep naming aligned so spec comparisons remain easy.
+- For command specs, preserve exact command names, descriptions, and parameter docs when intended to match JS.
 
-- Use ESM imports/exports.
-- Use semicolons (required by ESLint).
-- Prefer single quotes unless interpolation or local file style differs.
-- Prefer `const`; use `let` only for reassignment.
-- Avoid introducing CommonJS in new code.
+## Async, Errors, And Process Handling
 
-## Imports
+- ESLint enforces `require-await` and disallows floating promises.
+- Always `await` async work or handle the promise explicitly.
+- Wrap risky network, file, subprocess, and model calls in `try` / `catch` or `try` / `except`.
+- Error messages should include enough context to act on them.
+- Do not silently swallow errors.
+- Preserve existing process-lifecycle behavior around MindServer, agent restarts, and shutdown flows.
+- Be careful with long-running subprocesses and socket connections; ensure cleanup paths remain intact.
 
-- Keep imports at the top of files.
-- Match local ordering in touched files.
-- Do not reorder unrelated imports without reason.
+## Naming And Architecture Conventions
 
-## Formatting
+- Keep JavaScript as the owner of Mineflayer-specific behavior unless intentionally migrating a boundary.
+- Keep Python orchestration thin unless the task is specifically about moving responsibility into Python.
+- New bridge APIs should be narrowly scoped and explicit about direction: Python -> MindServer -> JS agent.
+- For mock-only behavior, name it clearly as mock/test-only and avoid blending it into production paths accidentally.
 
-- Match file indentation (many files use 4 spaces).
-- Avoid trailing whitespace.
-- Keep complex logic readable; avoid dense one-liners.
-- `curly` is not enforced, but explicit braces are preferred.
+## Security And Safety
 
-## Types, Naming, and Structure
+- Treat `allow_insecure_coding` and `!newAction` as high-risk features.
+- Never commit secrets such as `keys.json`, `.env`, tokens, or credentials.
+- Avoid destructive git or filesystem operations unless explicitly requested.
+- Respect a dirty working tree; do not overwrite unrelated user edits.
+- Do not weaken sandboxing or security-related checks without a clear request.
 
-- No TypeScript currently; use runtime validation and guard clauses.
-- Classes: `PascalCase`.
-- Functions/methods/variables: `camelCase`.
-- Constants: `UPPER_SNAKE_CASE`.
-- Preserve local filename conventions (many files use `snake_case.js`).
+## Cursor And Copilot Rules
 
-## Error Handling and Async
-
-- Wrap risky IO/network/model calls with `try/catch`.
-- Fail fast on invalid critical config.
-- Provide actionable error messages with context.
-- Never silently swallow errors.
-- ESLint enforces no floating promises and disallows async without `await`.
-- Always `await` async operations or handle promises explicitly.
-
-## Python Script Conventions
-
-- Follow existing `argparse` CLI patterns in `tasks/*.py`.
-- Keep path handling explicit and robust.
-- Surface parse/file errors clearly.
-
-## Safety Guidance
-
-- Treat `allow_insecure_coding` flows as high-risk execution paths.
-- Never commit secrets (`keys.json`, `.env`, credentials).
-- Avoid destructive filesystem/git operations unless explicitly requested.
-- Preserve unrelated user changes in a dirty working tree.
-
-## Cursor and Copilot Rules
-
-Checked for local instruction files:
-
-- `.cursor/rules/`
-- `.cursorrules`
-- `.github/copilot-instructions.md`
-
-Result: none are present in this repository at this time.
-If these files are added later, treat them as higher-priority local instructions.
+- Checked paths: `.cursor/rules/`, `.cursorrules`, `.github/copilot-instructions.md`
+- Result: none are present right now.
+- If any of these files are added later, treat them as repository-local instructions with high priority.
 
 ## Recommended Agent Workflow
 
-1. Read target files and nearby dependencies first.
-2. Make minimal, scoped edits matching local style.
-3. Lint touched files (`npx eslint <paths>`).
-4. Run one representative task command for behavior validation.
-5. Report assumptions and verification steps in your final message.
+1. Read the target files plus their immediate neighbors before editing.
+2. Check whether the change belongs in JS, Python, or a bridge layer.
+3. Make minimal edits that match existing local style.
+4. Run the narrowest useful test first, especially a single pytest target when available.
+5. Run Ruff on touched Python files and ESLint on touched JS files.
+6. For bridge changes, prefer validating both unit tests and one representative integration path.
+7. Report any assumptions, limitations, and what was actually verified.

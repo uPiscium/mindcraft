@@ -212,6 +212,52 @@ export function createMindServer(host_public = false, port = 8080) {
             io.emit('bot-output', agentName, message);
         });
 
+        socket.on('run-query-command', (data, callback) => {
+            const agentName = data?.agentName;
+            const agent = agent_connections[agentName];
+
+            if (!agentName || !agent) {
+                callback({ success: false, error: `Agent '${agentName}' not found.` });
+                return;
+            }
+
+            if (!agent.socket) {
+                callback({ success: false, error: `Agent '${agentName}' is not connected.` });
+                return;
+            }
+
+            try {
+                agent.socket.emit('run-query-command', data, (response) => {
+                    callback(response ?? { success: false, error: 'No response received from agent.' });
+                });
+            } catch (error) {
+                callback({ success: false, error: error.message ?? String(error) });
+            }
+        });
+
+        socket.on('run-action-command', (data, callback) => {
+            const agentName = data?.agentName;
+            const agent = agent_connections[agentName];
+
+            if (!agentName || !agent) {
+                callback({ success: false, error: `Agent '${agentName}' not found.` });
+                return;
+            }
+
+            if (!agent.socket) {
+                callback({ success: false, error: `Agent '${agentName}' is not connected.` });
+                return;
+            }
+
+            try {
+                agent.socket.emit('run-action-command', data, (response) => {
+                    callback(response ?? { success: false, error: 'No response received from agent.' });
+                });
+            } catch (error) {
+                callback({ success: false, error: error.message ?? String(error) });
+            }
+        });
+
         socket.on('listen-to-agents', () => {
             addListener(socket);
         });

@@ -1,5 +1,6 @@
 import { createMindServer, registerAgent, numStateListeners } from './mindserver.js';
 import { AgentProcess } from '../process/agent_process.js';
+import { MockAgentClient } from '../process/mock_agent_client.js';
 import { getServer } from './mcserver.js';
 import open from 'open';
 
@@ -45,10 +46,12 @@ export async function createAgent(settings) {
 
     try {
         try {
-            const server = await getServer(settings.host, settings.port, settings.minecraft_version);
-            settings.host = server.host;
-            settings.port = server.port;
-            settings.minecraft_version = server.version;
+            if (!settings.mock_client) {
+                const server = await getServer(settings.host, settings.port, settings.minecraft_version);
+                settings.host = server.host;
+                settings.port = server.port;
+                settings.minecraft_version = server.version;
+            }
         } catch (error) {
             console.warn(`Error getting server:`, error);
             if (settings.minecraft_version === "auto") {
@@ -57,8 +60,10 @@ export async function createAgent(settings) {
             console.warn(`Attempting to connect anyway...`);
         }
 
-        const agentProcess = new AgentProcess(agent_name, mindserver_port);
-        agentProcess.start(load_memory, init_message, agentIndex);
+        const agentProcess = settings.mock_client
+            ? new MockAgentClient(agent_name, mindserver_port, settings)
+            : new AgentProcess(agent_name, mindserver_port);
+        await agentProcess.start(load_memory, init_message, agentIndex);
         agent_processes[settings.profile.name] = agentProcess;
     } catch (error) {
         console.error(`Error creating agent ${agent_name}:`, error);

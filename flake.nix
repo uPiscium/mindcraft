@@ -4,14 +4,13 @@
   outputs = { self, nixpkgs }:
     let
       pkgs = nixpkgs.legacyPackages.x86_64-linux;
-      gccVersion = pkgs.gcc.cc.version;
-      gccTarget = pkgs.stdenv.hostPlatform.config;
     in
     {
       devShells.x86_64-linux.default = pkgs.mkShell.override {
         stdenv = pkgs.clangStdenv;
       } {
         buildInputs = with pkgs; [
+          just
           nodejs_22
           uv
           python3

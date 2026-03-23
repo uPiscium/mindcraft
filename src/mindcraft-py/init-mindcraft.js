@@ -10,6 +10,16 @@ function parseArguments() {
             describe: 'Mindserver port',
             default: settings.mindserver_port
         })
+        .option('host_public', {
+            type: 'boolean',
+            describe: 'Bind MindServer to all interfaces',
+            default: true
+        })
+        .option('auto_open_ui', {
+            type: 'boolean',
+            describe: 'Automatically open UI in browser',
+            default: settings.auto_open_ui
+        })
         .help()
         .alias('help', 'h')
         .parse();
@@ -18,7 +28,8 @@ function parseArguments() {
 const args = parseArguments();
 
 settings.mindserver_port = args.mindserver_port;
+settings.auto_open_ui = args.auto_open_ui;
 
-Mindcraft.init(settings.mindserver_port);
+Mindcraft.init(args.host_public, settings.mindserver_port, settings.auto_open_ui);
 
-console.log(`Mindcraft initialized with MindServer at localhost:${settings.mindserver_port}`); 
+console.log(`Mindcraft initialized with MindServer at localhost:${settings.mindserver_port}`);
