@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from mindcraft_py.catalog import build_command_catalog
 from mindcraft_py.commands import (
     CommandParam,
     CommandSpec,
@@ -195,9 +196,19 @@ def test_default_registry_matches_javascript_specs():
 
 
 def test_command_catalog_is_generated():
-    catalog_path = PROJECT_ROOT / "mindcraft_py" / "command_catalog.json"
+    catalog = build_command_catalog()
 
-    assert catalog_path.exists()
+    assert catalog[0]["name"] == "!stats"
+    assert any(item["name"] == "!help" for item in catalog)
+
+
+def test_command_catalog_matches_python_registry():
+    from mindcraft_py.catalog import load_command_catalog
+
+    catalog = load_command_catalog()
+    names = [item["name"] for item in catalog]
+
+    assert names == [command.name for command in get_default_registry().commands()]
 
 
 def test_default_registry_parses_all_expected_command_names():
