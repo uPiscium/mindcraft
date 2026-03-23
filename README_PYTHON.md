@@ -123,6 +123,7 @@ wait()
 - `mindcraft_py/js_command_specs.py` で `src/agent/commands/actions.js` と `src/agent/commands/queries.js` から仕様を抽出し、Python側定義との自動比較に使っています。
 - `mindcraft_py/commands.py` では、`!craftable`, `!modes`, `!savedPlaces`, `!checkBlueprint*`, `!getBlueprint*`, `!getCraftingPlan`, `!searchWiki`, `!help` も Python registry に取り込んでいます。
 - `mindcraft_py/actions.py` / `mindcraft_py/commands.py` / `mindcraft_py/runtime.py` の組み合わせで、query/action の bridge を共通化しています。
+- `mindcraft_py/command_catalog.json` は Python registry から生成され、JS 側の command docs 供給元としても使われます。
 - query 系の一部は Python registry から MindServer 経由で JavaScript 実行アダプタを呼べるようになっています。
 - mineflayer を使う実処理本体は引き続きJavaScript側ですが、query 実行入口は Python から呼び出せます。
 - `mock_client` を有効にすると、Minecraft を起動せずに mock agent で query bridge をテストできます。

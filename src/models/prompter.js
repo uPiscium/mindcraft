@@ -1,4 +1,4 @@
-import { readFileSync, mkdirSync, writeFileSync} from 'fs';
+import { existsSync, readFileSync, mkdirSync, writeFileSync} from 'fs';
 import { Examples } from '../utils/examples.js';
 import { getCommandDocs } from '../agent/commands/index.js';
 import { SkillLibrary } from "../agent/library/skill_library.js";
@@ -12,6 +12,57 @@ import { selectAPI, createModel } from './_model_map.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const pythonCommandCatalogPath = path.join(__dirname, '..', '..', 'mindcraft_py', 'command_catalog.json');
+
+function loadPythonCommandCatalog() {
+    if (!existsSync(pythonCommandCatalogPath)) {
+        return null;
+    }
+
+    try {
+        return JSON.parse(readFileSync(pythonCommandCatalogPath, 'utf8'));
+    } catch (error) {
+        console.warn('Failed to load Python command catalog, falling back to JS docs:', error);
+        return null;
+    }
+}
+
+function buildCommandDocsFromCatalog(agent) {
+    const catalog = loadPythonCommandCatalog();
+    if (!catalog) {
+        return getCommandDocs(agent);
+    }
+
+    const blockedActions = agent.blocked_actions || [];
+    const typeTranslations = {
+        float: 'number',
+        int: 'number',
+        BlockName: 'string',
+        ItemName: 'string',
+        BlockOrItemName: 'string',
+        boolean: 'bool',
+        string: 'string',
+    };
+
+    let docs = `\n*COMMAND DOCS\n You can use the following commands to perform actions and get information about the world. \n    Use the commands with the syntax: !commandName or !commandName("arg1", 1.2, ...) if the command takes arguments.\n    Do not use codeblocks. Use double quotes for strings. Only use one command in each response, trailing commands and comments will be ignored.\n`;
+
+    for (const command of catalog) {
+        if (blockedActions.includes(command.name)) {
+            continue;
+        }
+
+        docs += `${command.name}: ${command.description}\n`;
+        if (command.params) {
+            docs += 'Params:\n';
+            for (const [paramName, paramSpec] of Object.entries(command.params)) {
+                const translatedType = typeTranslations[paramSpec.type] ?? paramSpec.type;
+                docs += `${paramName}: (${translatedType}) ${paramSpec.description}\n`;
+            }
+        }
+    }
+
+    return docs + '*\n';
+}
 
 export class Prompter {
     constructor(agent, profile) {
@@ -150,7 +201,7 @@ export class Prompter {
             prompt = prompt.replaceAll('$ACTION', this.agent.actions.currentActionLabel);
         }
         if (prompt.includes('$COMMAND_DOCS'))
-            prompt = prompt.replaceAll('$COMMAND_DOCS', getCommandDocs(this.agent));
+            prompt = prompt.replaceAll('$COMMAND_DOCS', buildCommandDocsFromCatalog(this.agent));
         if (prompt.includes('$CODE_DOCS')) {
             const code_task_content = messages.slice().reverse().find(msg =>
                 msg.role !== 'system' && msg.content.includes('!newAction(')

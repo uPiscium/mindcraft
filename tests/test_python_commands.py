@@ -194,6 +194,12 @@ def test_default_registry_matches_javascript_specs():
             assert actual_param.description == js_param.description
 
 
+def test_command_catalog_is_generated():
+    catalog_path = PROJECT_ROOT / "mindcraft_py" / "command_catalog.json"
+
+    assert catalog_path.exists()
+
+
 def test_default_registry_parses_all_expected_command_names():
     docs = get_command_docs()
 
