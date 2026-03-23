@@ -15,6 +15,7 @@ export class Ollama {
         let messages = strictFormat(turns);
         messages.unshift({ role: 'system', content: systemMessage });
         const maxAttempts = 5;
+        const OLLAMA_OPTIONS = { num_ctx: 4096 };
         let attempt = 0;
         let finalRes = null;
 
@@ -27,6 +28,7 @@ export class Ollama {
                     model: model,
                     messages: messages,
                     stream: false,
+                    options: OLLAMA_OPTIONS,
                     ...(this.params || {})
                 });
                 if (apiResponse) {
@@ -35,9 +37,9 @@ export class Ollama {
                     res = 'No response data.';
                 }
             } catch (err) {
-                if (err.message.toLowerCase().includes('context length') && turns.length > 1) {
-                    console.log('Context length exceeded, trying again with shorter context.');
-                    return await this.sendRequest(turns.slice(1), systemMessage);
+                const errorText = String(err?.message ?? err).toLowerCase();
+                if (errorText.includes('504') || errorText.includes('timeout')) {
+                    console.log('Ollama request timed out or returned 504.');
                 } else {
                     console.log(err);
                     res = 'My brain disconnected, try again.';
@@ -78,8 +80,15 @@ export class Ollama {
     async send(endpoint, body) {
         const url = new URL(endpoint, this.url);
         let method = 'POST';
-        let headers = new Headers();
-        const request = new Request(url, { method, headers, body: JSON.stringify(body) });
+        let headers = new Headers({ 'Content-Type': 'application/json' });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 300000);
+        const request = new Request(url, {
+            method,
+            headers,
+            body: JSON.stringify(body),
+            signal: controller.signal
+        });
         let data = null;
         try {
             const res = await fetch(request);
@@ -89,8 +98,14 @@ export class Ollama {
                 throw new Error(`Ollama Status: ${res.status}`);
             }
         } catch (err) {
+            if (err?.name === 'AbortError') {
+                throw new Error('Request to Ollama timed out (5 minutes limit).');
+            }
             console.error('Failed to send Ollama request.');
             console.error(err);
+            throw err;
+        } finally {
+            clearTimeout(timeoutId);
         }
         return data;
     }
