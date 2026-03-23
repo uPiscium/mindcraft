@@ -59,7 +59,7 @@
         "description": "The level number to check.",
         "domain": [
           0,
-          Infinity,
+          null,
           "[)"
         ]
       }
@@ -90,7 +90,7 @@
         "description": "The level number to check.",
         "domain": [
           0,
-          Infinity,
+          null,
           "[)"
         ]
       }
@@ -111,7 +111,7 @@
         "description": "The quantity of the item that we are trying to craft",
         "domain": [
           1,
-          Infinity,
+          null,
           "[)"
         ]
       }

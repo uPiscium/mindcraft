@@ -1,4 +1,5 @@
 import json
+from math import inf
 from pathlib import Path
 
 from .commands import get_default_registry
@@ -34,8 +35,40 @@ def build_command_catalog():
     return catalog
 
 
+def _normalize_catalog_domains(catalog):
+    normalized = []
+    for command in catalog:
+        command_copy = dict(command)
+        params = command_copy.get("params")
+        if params:
+            params_copy = {}
+            for param_name, param_data in params.items():
+                param_copy = dict(param_data)
+                if "domain" in param_copy and param_copy["domain"] is not None:
+                    lower, upper, *rest = param_copy["domain"]
+                    if upper == float("inf") or upper == inf:
+                        upper = None
+                    param_copy["domain"] = [lower, upper, *(rest[:1] or ["[)"])]
+                params_copy[param_name] = param_copy
+            command_copy["params"] = params_copy
+        normalized.append(command_copy)
+    return normalized
+
+
+def _json_safe(value):
+    if value == inf or value == float("inf"):
+        return None
+    if isinstance(value, tuple):
+        return [_json_safe(item) for item in value]
+    if isinstance(value, list):
+        return [_json_safe(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _json_safe(item) for key, item in value.items()}
+    return value
+
+
 def write_command_catalog(path=CATALOG_PATH):
-    catalog = build_command_catalog()
+    catalog = _json_safe(_normalize_catalog_domains(build_command_catalog()))
     path.write_text(
         json.dumps(catalog, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )
