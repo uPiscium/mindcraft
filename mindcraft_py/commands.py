@@ -156,16 +156,39 @@ class PythonCommandRegistry:
         return "\n".join(docs)
 
     def execute_query(self, runtime, agent_name, message, timeout=60):
+        return self._execute_bridge_command(
+            runtime,
+            agent_name,
+            message,
+            expected_kind="query",
+            timeout=timeout,
+        )
+
+    def execute_action(self, runtime, agent_name, message, timeout=60):
+        return self._execute_bridge_command(
+            runtime,
+            agent_name,
+            message,
+            expected_kind="action",
+            timeout=timeout,
+        )
+
+    def _execute_bridge_command(
+        self, runtime, agent_name, message, expected_kind, timeout=60
+    ):
         invocation = self.parse_message(message)
         command = self.get(invocation.command_name)
         if command is None:
             raise ValueError(f"{invocation.command_name} is not a command.")
-        if command.kind != "query":
-            raise ValueError(f"{command.name} is not a query command.")
+        if command.kind != expected_kind:
+            raise ValueError(f"{command.name} is not a {expected_kind} command.")
         if command.bridge != "js":
-            raise ValueError(f"{command.name} does not have a JavaScript query bridge.")
+            raise ValueError(
+                f"{command.name} does not have a JavaScript {expected_kind} bridge."
+            )
 
-        return runtime.execute_query_command(
+        return runtime.execute_bridge_command(
+            expected_kind,
             agent_name,
             self.trunc_command_message(message),
             timeout=timeout,
@@ -244,6 +267,111 @@ def create_default_registry():
                 bridge="js",
             ),
             CommandSpec(
+                name="!craftable",
+                description="Get the craftable items with the bot's inventory.",
+                kind="query",
+                bridge="js",
+            ),
+            CommandSpec(
+                name="!modes",
+                description=(
+                    "Get all available modes and their docs and see which are on/off."
+                ),
+                kind="query",
+                bridge="js",
+            ),
+            CommandSpec(
+                name="!savedPlaces",
+                description="List all saved locations.",
+                kind="query",
+                bridge="js",
+            ),
+            CommandSpec(
+                name="!checkBlueprintLevel",
+                description=(
+                    "Check if the level is complete and what blocks still need to be "
+                    "placed for the blueprint"
+                ),
+                params={
+                    "levelNum": CommandParam(
+                        type="int",
+                        description="The level number to check.",
+                        domain=(0, float("inf"), "[)"),
+                    )
+                },
+                kind="query",
+                bridge="js",
+            ),
+            CommandSpec(
+                name="!checkBlueprint",
+                description=(
+                    "Check what blocks still need to be placed for the blueprint"
+                ),
+                kind="query",
+                bridge="js",
+            ),
+            CommandSpec(
+                name="!getBlueprint",
+                description="Get the blueprint for the building",
+                kind="query",
+                bridge="js",
+            ),
+            CommandSpec(
+                name="!getBlueprintLevel",
+                description="Get the blueprint for the building",
+                params={
+                    "levelNum": CommandParam(
+                        type="int",
+                        description="The level number to check.",
+                        domain=(0, float("inf"), "[)"),
+                    )
+                },
+                kind="query",
+                bridge="js",
+            ),
+            CommandSpec(
+                name="!getCraftingPlan",
+                description=(
+                    "Provides a comprehensive crafting plan for a specified item. "
+                    "This includes a breakdown of required ingredients, the exact "
+                    "quantities needed, and an analysis of missing ingredients or "
+                    "extra items needed based on the bot's current inventory."
+                ),
+                params={
+                    "targetItem": CommandParam(
+                        type="string",
+                        description="The item that we are trying to craft",
+                    ),
+                    "quantity": CommandParam(
+                        type="int",
+                        description=(
+                            "The quantity of the item that we are trying to craft"
+                        ),
+                        domain=(1, float("inf"), "[)"),
+                    ),
+                },
+                kind="query",
+                bridge="js",
+            ),
+            CommandSpec(
+                name="!searchWiki",
+                description="Search the Minecraft Wiki for the given query.",
+                params={
+                    "query": CommandParam(
+                        type="string",
+                        description="The query to search for.",
+                    )
+                },
+                kind="query",
+                bridge="js",
+            ),
+            CommandSpec(
+                name="!help",
+                description="Lists all available commands and their descriptions.",
+                kind="query",
+                bridge="js",
+            ),
+            CommandSpec(
                 name="!newAction",
                 description=(
                     "Perform new and unknown custom behaviors that are not "
@@ -259,6 +387,7 @@ def create_default_registry():
                     )
                 },
                 kind="action",
+                bridge="js",
             ),
             CommandSpec(
                 name="!stop",
@@ -266,6 +395,7 @@ def create_default_registry():
                     "Force stop all actions and commands that are currently executing."
                 ),
                 kind="action",
+                bridge="js",
             ),
             CommandSpec(
                 name="!goal",
@@ -280,6 +410,7 @@ def create_default_registry():
                     )
                 },
                 kind="action",
+                bridge="js",
             ),
         ]
     )
@@ -308,6 +439,15 @@ def parse_command_message(message):
 
 def execute_query(runtime, agent_name, message, timeout=60):
     return get_default_registry().execute_query(
+        runtime,
+        agent_name,
+        message,
+        timeout=timeout,
+    )
+
+
+def execute_action(runtime, agent_name, message, timeout=60):
+    return get_default_registry().execute_action(
         runtime,
         agent_name,
         message,

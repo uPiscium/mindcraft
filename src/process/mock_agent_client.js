@@ -146,6 +146,42 @@ export class MockAgentClient {
             return 'Mock help is not implemented.';
         }
 
+        if (message.startsWith('!craftable')) {
+            return 'CRAFTABLE_ITEMS\n- planks\n- sticks';
+        }
+
+        if (message.startsWith('!modes')) {
+            return 'MOdes\n- idle: on\n- gather: off';
+        }
+
+        if (message.startsWith('!savedPlaces')) {
+            return 'Saved place names: spawn, base';
+        }
+
+        if (message.startsWith('!checkBlueprintLevel')) {
+            return 'Blueprint level is complete.';
+        }
+
+        if (message.startsWith('!checkBlueprint')) {
+            return 'Blueprint has no missing blocks.';
+        }
+
+        if (message.startsWith('!getBlueprint')) {
+            return 'Blueprint: mock building instructions.';
+        }
+
+        if (message.startsWith('!getBlueprintLevel')) {
+            return 'Blueprint level details: mock.';
+        }
+
+        if (message.startsWith('!getCraftingPlan')) {
+            return 'Crafting plan: mock plan.';
+        }
+
+        if (message.startsWith('!searchWiki')) {
+            return 'Wiki search results: mock.';
+        }
+
         throw new Error(`Mock query command not implemented for: ${message}`);
     }
 }

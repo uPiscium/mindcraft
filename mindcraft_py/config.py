@@ -4,7 +4,13 @@ import os
 import re
 from pathlib import Path
 
+try:
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover - Python < 3.11 unsupported anyway
+    tomllib = None
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_SETTINGS_TOML_PATH = PROJECT_ROOT / "settings.toml"
 DEFAULT_SETTINGS_PATH = PROJECT_ROOT / "settings.js"
 
 
@@ -89,6 +95,11 @@ def _extract_settings_object(content):
 
 
 def _load_base_settings(settings_path=DEFAULT_SETTINGS_PATH):
+    toml_path = DEFAULT_SETTINGS_TOML_PATH
+    if tomllib is not None and toml_path.exists():
+        with open(toml_path, "rb") as file_obj:
+            return tomllib.load(file_obj)
+
     with open(settings_path, "r", encoding="utf-8") as file_obj:
         content = file_obj.read()
 

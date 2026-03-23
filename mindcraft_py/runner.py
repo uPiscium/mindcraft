@@ -1,7 +1,7 @@
 import copy
-import json
 
 from .config import resolve_settings
+from .profiles import load_profile
 from .runtime import MindcraftRuntime
 
 
@@ -16,8 +16,7 @@ def run_from_cli_args(cli_args=None):
     )
 
     for profile_path in settings["profiles"]:
-        with open(profile_path, "r", encoding="utf-8") as file_obj:
-            profile_json = json.load(file_obj)
+        profile_json = load_profile(profile_path)
 
         agent_settings = copy.deepcopy(settings)
         agent_settings["profile"] = profile_json

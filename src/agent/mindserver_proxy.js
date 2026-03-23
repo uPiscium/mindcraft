@@ -100,6 +100,26 @@ class MindServerProxy {
             }
         });
 
+        this.socket.on('run-action-command', async (data, callback) => {
+            if (!this.agent) {
+                callback({ success: false, error: 'Agent is not initialized' });
+                return;
+            }
+
+            if (!data || data.agentName !== this.agent.name) {
+                callback({ success: false, error: 'Action command targeted the wrong agent' });
+                return;
+            }
+
+            try {
+                const result = await executeCommand(this.agent, data.message);
+                callback({ success: true, result });
+            } catch (error) {
+                console.error('Error executing action command:', error);
+                callback({ success: false, error: error.message ?? String(error) });
+            }
+        });
+
         // Request settings and wait for response
         await new Promise((resolve, reject) => {
             const timeout = setTimeout(() => {

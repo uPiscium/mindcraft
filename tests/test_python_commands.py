@@ -1,8 +1,11 @@
+from pathlib import Path
+
 from mindcraft_py.commands import (
     CommandParam,
     CommandSpec,
     PythonCommandRegistry,
     contains_command,
+    execute_action,
     execute_query,
     get_command_docs,
     get_default_registry,
@@ -10,6 +13,9 @@ from mindcraft_py.commands import (
     trunc_command_message,
 )
 from mindcraft_py.js_command_specs import extract_js_command_specs
+from mindcraft_py.profiles import load_profile
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 EXPECTED_DEFAULT_COMMANDS = {
     "!stats": {
@@ -26,6 +32,62 @@ EXPECTED_DEFAULT_COMMANDS = {
     },
     "!entities": {
         "description": "Get the nearby players and entities.",
+        "params": {},
+    },
+    "!craftable": {
+        "description": "Get the craftable items with the bot's inventory.",
+        "params": {},
+    },
+    "!modes": {
+        "description": (
+            "Get all available modes and their docs and see which are on/off."
+        ),
+        "params": {},
+    },
+    "!savedPlaces": {
+        "description": "List all saved locations.",
+        "params": {},
+    },
+    "!checkBlueprintLevel": {
+        "description": (
+            "Check if the level is complete and what blocks still need to be placed "
+            "for the blueprint"
+        ),
+        "params": {"levelNum": ("int", "The level number to check.")},
+    },
+    "!checkBlueprint": {
+        "description": "Check what blocks still need to be placed for the blueprint",
+        "params": {},
+    },
+    "!getBlueprint": {
+        "description": "Get the blueprint for the building",
+        "params": {},
+    },
+    "!getBlueprintLevel": {
+        "description": "Get the blueprint for the building",
+        "params": {"levelNum": ("int", "The level number to check.")},
+    },
+    "!getCraftingPlan": {
+        "description": (
+            "Provides a comprehensive crafting plan for a specified item. This "
+            "includes a breakdown of required ingredients, the exact quantities "
+            "needed, and an analysis of missing ingredients or extra items needed "
+            "based on the bot's current inventory."
+        ),
+        "params": {
+            "targetItem": ("string", "The item that we are trying to craft"),
+            "quantity": (
+                "int",
+                "The quantity of the item that we are trying to craft",
+            ),
+        },
+    },
+    "!searchWiki": {
+        "description": "Search the Minecraft Wiki for the given query.",
+        "params": {"query": ("string", "The query to search for.")},
+    },
+    "!help": {
+        "description": "Lists all available commands and their descriptions.",
         "params": {},
     },
     "!stop": {
@@ -213,10 +275,21 @@ class FakeRuntime:
         self.calls = []
 
     def execute_query_command(self, agent_name, message, timeout=60):
+        return self.execute_bridge_command("query", agent_name, message, timeout)
+
+    def execute_action_command(self, agent_name, message, timeout=60):
+        return self.execute_bridge_command("action", agent_name, message, timeout)
+
+    def execute_bridge_command(self, command_kind, agent_name, message, timeout=60):
         self.calls.append(
-            {"agent_name": agent_name, "message": message, "timeout": timeout}
+            {
+                "command_kind": command_kind,
+                "agent_name": agent_name,
+                "message": message,
+                "timeout": timeout,
+            }
         )
-        return f"query:{agent_name}:{message}:{timeout}"
+        return f"{command_kind}:{agent_name}:{message}:{timeout}"
 
 
 def test_execute_query_uses_runtime_bridge():
@@ -225,7 +298,14 @@ def test_execute_query_uses_runtime_bridge():
     result = execute_query(runtime, "Andy", "!stats() trailing text", timeout=15)
 
     assert result == "query:Andy:!stats:15"
-    assert runtime.calls == [{"agent_name": "Andy", "message": "!stats", "timeout": 15}]
+    assert runtime.calls == [
+        {
+            "command_kind": "query",
+            "agent_name": "Andy",
+            "message": "!stats",
+            "timeout": 15,
+        }
+    ]
 
 
 def test_execute_query_rejects_non_query_commands():
@@ -237,3 +317,42 @@ def test_execute_query_rejects_non_query_commands():
         assert str(error) == "!goal is not a query command."
     else:
         raise AssertionError("Expected ValueError for non-query command execution")
+
+
+def test_execute_action_uses_runtime_bridge():
+    runtime = FakeRuntime()
+
+    result = execute_action(runtime, "Andy", '!goal("collect logs")', timeout=15)
+
+    assert result == 'action:Andy:!goal("collect logs"):15'
+    assert runtime.calls == [
+        {
+            "command_kind": "action",
+            "agent_name": "Andy",
+            "message": '!goal("collect logs")',
+            "timeout": 15,
+        }
+    ]
+
+
+def test_execute_action_rejects_non_action_commands():
+    runtime = FakeRuntime()
+
+    try:
+        execute_action(runtime, "Andy", "!stats()")
+    except ValueError as error:
+        assert str(error) == "!stats is not a action command."
+    else:
+        raise AssertionError("Expected ValueError for non-action command execution")
+
+
+def test_load_profile_supports_json_and_toml():
+    from pathlib import Path
+
+    project_root = Path(__file__).resolve().parent.parent
+    json_profile = load_profile(project_root / "agents" / "Andy.json")
+    toml_profile = load_profile(project_root / "agents" / "Andy.toml")
+
+    assert json_profile["name"] == "Andy"
+    assert toml_profile["name"] == "Andy"
+    assert json_profile["model"]["api"] == toml_profile["model"]["api"]

@@ -2,7 +2,7 @@
   "name": "Andy",
   "model": {
     "api": "ollama",
-    "model": "qwen3.5:9b",
+    "model": "Sweaterdog/Andy-4:q8_0",
     "url": "https://ollama.arc.upiscium.dev"
   },
   "embedding": {

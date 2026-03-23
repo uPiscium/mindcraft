@@ -8,6 +8,7 @@
 - Minecraft接続・mineflayer・botの実行はJavaScript側（既存実装）を利用します。
 - PythonはNode.jsブリッジを起動し、MindServer（Socket.IO）経由でエージェントを操作します。
 - 設定解決はPython側へ移しており、LLM向けコマンド仕様もPython側へ段階的に移行中です。
+- Python版の設定は `settings.toml` を優先し、無ければ `settings.js` を読みます。
 
 ## 前提条件
 
@@ -110,6 +111,7 @@ wait()
 ## 設定の扱い
 
 - 基本設定は既存の`settings.js`を使用します。
+- Python版は `settings.toml` を優先して読みます。無い場合のみ `settings.js` を使います。
 - `--profiles`, `--task_path`, `--task_id` はPython版でも利用できます。
 - 環境変数オーバーライド（`MINECRAFT_PORT`, `MINDSERVER_PORT` など）も既存仕様と互換です。
 - 設定解決は`mindcraft_py/config.py`で実施し、`settings.js`をPython側で読み取ります。
@@ -119,9 +121,17 @@ wait()
 - `mindcraft_py/commands.py` に、Python側の command registry の最小実装があります。
 - 現時点では `!stats`, `!inventory`, `!nearbyBlocks`, `!entities`, `!stop`, `!goal`, `!newAction` の仕様をPython側で管理しています。
 - `mindcraft_py/js_command_specs.py` で `src/agent/commands/actions.js` と `src/agent/commands/queries.js` から仕様を抽出し、Python側定義との自動比較に使っています。
+- `mindcraft_py/commands.py` では、`!craftable`, `!modes`, `!savedPlaces`, `!checkBlueprint*`, `!getBlueprint*`, `!getCraftingPlan`, `!searchWiki`, `!help` も Python registry に取り込んでいます。
+- `mindcraft_py/actions.py` / `mindcraft_py/commands.py` / `mindcraft_py/runtime.py` の組み合わせで、query/action の bridge を共通化しています。
 - query 系の一部は Python registry から MindServer 経由で JavaScript 実行アダプタを呼べるようになっています。
 - mineflayer を使う実処理本体は引き続きJavaScript側ですが、query 実行入口は Python から呼び出せます。
 - `mock_client` を有効にすると、Minecraft を起動せずに mock agent で query bridge をテストできます。
+
+## Profile の形式
+
+- Python版では `agents/*.json` と `agents/*.toml` の両方を読み込めます。
+- `profiles/*.json` も同様に TOML 化できます。
+- まずは JSON を残したまま、必要な profile だけ TOML に置き換える運用でも問題ありません。
 
 ## 主要ファイル
 

@@ -1,4 +1,5 @@
 from .commands import (
+    execute_action,
     execute_query,
     get_command_docs,
     get_default_registry,
@@ -26,6 +27,10 @@ def execute_query_command(agent_name, message, timeout=60):
     return execute_query(_default_runtime, agent_name, message, timeout=timeout)
 
 
+def execute_action_command(agent_name, message, timeout=60):
+    return execute_action(_default_runtime, agent_name, message, timeout=timeout)
+
+
 def shutdown():
     _default_runtime.shutdown()
 
@@ -41,6 +46,8 @@ def get_runtime():
 __all__ = [
     "MindcraftRuntime",
     "create_agent",
+    "execute_action",
+    "execute_action_command",
     "execute_query",
     "execute_query_command",
     "get_command_docs",

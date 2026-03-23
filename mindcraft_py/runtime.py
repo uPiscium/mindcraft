@@ -143,18 +143,36 @@ class MindcraftRuntime:
         print(f"Agent '{profile_name}' created successfully")
         return result
 
-    def execute_query_command(self, agent_name, message, timeout=60):
+    def execute_bridge_command(self, command_kind, agent_name, message, timeout=60):
+        event_name = {
+            "query": "run-query-command",
+            "action": "run-action-command",
+        }.get(command_kind)
+
+        if not event_name:
+            raise ValueError(f"Unsupported bridge command kind: {command_kind}")
+
         result = self._emit_with_callback(
-            "run-query-command",
+            event_name,
             {"agentName": agent_name, "message": message},
             timeout=timeout,
         )
 
         if not result.get("success"):
             error = result.get("error", "Unknown error")
-            raise RuntimeError(f"Error executing query command: {error}")
+            raise RuntimeError(f"Error executing {command_kind} command: {error}")
 
         return result.get("result")
+
+    def execute_query_command(self, agent_name, message, timeout=60):
+        return self.execute_bridge_command(
+            "query", agent_name, message, timeout=timeout
+        )
+
+    def execute_action_command(self, agent_name, message, timeout=60):
+        return self.execute_bridge_command(
+            "action", agent_name, message, timeout=timeout
+        )
 
     def _emit_with_callback(self, event_name, payload, timeout=60):
         done = threading.Event()
