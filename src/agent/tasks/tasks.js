@@ -4,6 +4,52 @@ import { getPosition } from '../library/world.js';
 import { ConstructionTaskValidator, Blueprint } from './construction_tasks.js';
 import { CookingTaskInitiator } from './cooking_tasks.js';
 
+function getInventoryCounts(bot) {
+    const inventory = {};
+    bot.inventory.slots.forEach((slot) => {
+        if (slot) {
+            const itemName = slot.name.toLowerCase();
+            inventory[itemName] = (inventory[itemName] || 0) + slot.count;
+        }
+    });
+    return inventory;
+}
+
+async function waitForInventoryCounts(bot, expectedCounts, timeoutMs = 5000, intervalMs = 250) {
+    const start = Date.now();
+    const entries = Object.entries(expectedCounts);
+
+    while (Date.now() - start < timeoutMs) {
+        const currentCounts = getInventoryCounts(bot);
+        const satisfied = entries.every(([itemName, requiredCount]) => {
+            return (currentCounts[itemName.toLowerCase()] || 0) >= requiredCount;
+        });
+
+        if (satisfied) {
+            return true;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    }
+
+    return false;
+}
+
+async function waitForInventoryToBeEmpty(bot, timeoutMs = 5000, intervalMs = 250) {
+    const start = Date.now();
+
+    while (Date.now() - start < timeoutMs) {
+        const currentCounts = getInventoryCounts(bot);
+        if (Object.keys(currentCounts).length === 0) {
+            return true;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    }
+
+    return false;
+}
+
 const PROGRESS_FILE = './hells_kitchen_progress.json';
 
 const hellsKitchenProgressManager = {
@@ -409,8 +455,11 @@ export class Task {
         await this.agent.bot.chat(`/clear ${this.name}`);
         console.log(`Cleared ${this.name}'s inventory.`);
 
-        //wait for a bit so inventory is cleared
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        // Wait until inventory is actually empty before continuing.
+        const inventoryCleared = await waitForInventoryToBeEmpty(this.agent.bot, 5000);
+        if (!inventoryCleared) {
+            console.warn(`Inventory for ${this.name} was not confirmed clear before initialization.`);
+        }
 
         if (this.data === null)
             return;
@@ -472,8 +521,10 @@ export class Task {
                 console.log(`Gave ${this.name} ${quantity} ${itemName}`);
             }
 
-            // Wait briefly for inventory commands to complete
-            await new Promise((resolve) => setTimeout(resolve, 500));
+            const inventoryReady = await waitForInventoryCounts(this.agent.bot, initialInventory, 5000);
+            if (!inventoryReady) {
+                console.warn(`Inventory for ${this.name} did not reach the expected initial state in time.`);
+            }
         }
 
         if (this.initiator && this.agent.count_id === 0) {

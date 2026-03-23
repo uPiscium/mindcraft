@@ -19,7 +19,7 @@
         "target": "shears",
         "number_of_target": 1,
         "type": "techtree",
-        "timeout": 120
+        "timeout": 240
     }, 
     "multiagent_techtree_1_wooden_pickaxe": {
         "goal": "Collaborate with other agents to build a wooden pickaxe.",
