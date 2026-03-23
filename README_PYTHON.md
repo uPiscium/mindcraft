@@ -148,8 +148,11 @@ wait()
 - `src/process/mock_agent_client.js`: Minecraft なしで接続できる mock agent client
 - `tests/test_python_commands.py`: Python command registry のテスト
 - `tests/test_mock_query_bridge.py`: mock client を使った query bridge の統合テスト
+- `tests/test_action_bridge_mock.py`: mock client を使った action bridge の統合テスト
 - `tests/test_multiagent_inventory_init.py`: multi-agent タスクの初期インベントリ確認
 - `justfile`: Python向けのテスト・lint・format コマンド
+
+`just catalog` と `python -m mindcraft_py.catalog` 相当の生成処理は `mindcraft_py/catalog.py` にあります。
 
 ## よくある問題
 
@@ -185,7 +188,12 @@ just test
 just lint
 just fmt
 just check
+just catalog
 ```
+
+`just catalog` は Python registry から `mindcraft_py/command_catalog.json` を再生成します。
+
+詳細な運用手順は `agent-docs/` を参照してください。
 
 ## セキュリティ注意
 

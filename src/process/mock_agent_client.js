@@ -90,6 +90,19 @@ export class MockAgentClient {
                 callback({ success: false, error: error.message ?? String(error) });
             }
         });
+
+        this.socket.on('run-action-command', async (data, callback) => {
+            if (!data || data.agentName !== this.name) {
+                callback({ success: false, error: 'Action command targeted the wrong mock agent' });
+                return;
+            }
+
+            try {
+                callback({ success: true, result: this._executeAction(data.message) });
+            } catch (error) {
+                callback({ success: false, error: error.message ?? String(error) });
+            }
+        });
     }
 
     async _login() {
@@ -182,6 +195,34 @@ export class MockAgentClient {
             return 'Wiki search results: mock.';
         }
 
+        if (message.startsWith('!goal')) {
+            return 'Goal set: mock.';
+        }
+
+        if (message.startsWith('!stop')) {
+            return 'All actions stopped.';
+        }
+
+        if (message.startsWith('!newAction')) {
+            return 'newAction executed in mock mode.';
+        }
+
         throw new Error(`Mock query command not implemented for: ${message}`);
+    }
+
+    _executeAction(message) {
+        if (message.startsWith('!goal')) {
+            return 'Goal set: mock.';
+        }
+
+        if (message.startsWith('!stop')) {
+            return 'All actions stopped.';
+        }
+
+        if (message.startsWith('!newAction')) {
+            return 'newAction executed in mock mode.';
+        }
+
+        throw new Error(`Mock action command not implemented for: ${message}`);
     }
 }

@@ -1,70 +1,60 @@
 # TODO
 
-Pythonコマンド移行まわりの残タスクを、優先順位つきで整理したものです。
+現状の残タスクを、優先順位順に整理したものです。
 
-## Priority 1: 実行経路の拡張
+## Priority 1: 設定/プロファイルの運用固定
 
-### 1. action 系 bridge の追加
+### 1. `settings.toml` と profile TOML の運用ルールを確定する
 
-- Python registry から JavaScript 実行アダプタへ action コマンドを渡せるようにする
-- 対象候補: `!stop`, `!goal`, その後に他の action 群
-- query 系と同様に、MindServer 経由で呼べる共通インターフェースに寄せる
-- Python 側から action/query の責務が見分けられる状態を維持する
+- `settings.toml` と `agents/*.toml` はすでに動作する
+- JSON/TOML を併用するか、今後どちらかに寄せるか決める
+- `README_PYTHON.md` と実運用設定の差分を減らす
+- `just catalog` で command catalog を再生成する運用を継続する
 
-### 2. query 系コマンドの移行範囲を広げる
+### 2. `command_catalog` 生成手順をCI/運用に組み込む
 
-- 現在 Python 側に持っているコマンドは `!stats`, `!inventory`, `!nearbyBlocks`, `!entities`, `!craftable`, `!modes`, `!savedPlaces`, `!checkBlueprintLevel`, `!checkBlueprint`, `!getBlueprint`, `!getBlueprintLevel`, `!getCraftingPlan`, `!searchWiki`, `!help`, `!stop`, `!goal`, `!newAction`
-- Python registry と JS 側 `src/agent/commands/*.js` の対応範囲を広げる
+- Python registry から生成する方針は固まった
+- 生成タイミング（手動 / 起動時 / CI）をどこに置くか決める
+- `mindcraft_py/command_catalog.json` の更新漏れを防ぐ
 
-## Priority 2: テスト基盤の強化
+## Priority 2: テスト/モックの拡張
 
-### 3. mock client の応答を拡張する
+### 3. mock client の応答をさらに増やす
 
-- 現在の mock client は query bridge 疎通確認向けの最小実装
-- `!inventory`, `!nearbyBlocks`, `!entities`, `!craftable`, `!help` などの返答バリエーションを増やす
-- 失敗系の応答や、より現実に近い状態データも返せるようにする
+- `!inventory`, `!nearbyBlocks`, `!entities`, `!craftable`, `!help`, `!goal`, `!stop`, `!newAction` は最低限動く
+- `techtree` / `construction` のタスクに合わせた応答を追加する
+- 失敗系の応答や状態差分も扱えるようにする
 
-### 4. action 系の mock テストを追加する
+### 4. 実 Minecraft 環境での multi-agent 回帰確認を増やす
 
-- action bridge 実装後、Minecraft 非起動でテストできるよう mock client を拡張する
-- 成功・失敗・タイムアウトのテストケースを用意する
-- Python から JS アダプタへの往復動作をテストで固定する
+- `multiagent_techtree_1_shears` は一度通ったので、他タスクも確認する
+- `multiagent_techtree_1_wooden_pickaxe` など、初期インベントリ差分があるタスクを試す
+- タスクごとの失敗パターンを記録する
 
-### 5. 実 Minecraft 環境での統合確認を増やす
+## Priority 3: 依存関係の健全化
 
-- mock client は Mineflayer の実挙動までは再現しない
-- 実ワールド接続で query / action bridge が期待通り動くか確認する
-- 代表タスクを使った回帰確認手順を整理する
+### 5. `npm audit` の high 警告を整理する
 
-## Priority 3: Python 側への責務移行
+- `patch-package` 警告は解消済み
+- ただし依存ツリーに high 脆弱性が残っているため、影響範囲を確認する
+- すぐ直せないものは、どれを許容するか記録する
 
-### 6. command docs の供給元切り替えを検討する
+## Priority 4: ドキュメント/開発フロー
 
-- いまは Python 側で command registry を持ちつつ、JS 側にも docs 生成経路が残っている
-- `src/models/prompter.js` が参照する command docs の供給元を段階的に切り替えるか検討する
-- LLM に見せる仕様と Python 側 registry の一元管理を目指す
-- Python 生成の command catalog を使って JS 側 docs 供給を段階的に置き換える
+### 6. PR/マージ履歴に合わせて文書を整える
 
-### 7. Python registry の自動生成・同期戦略を決める
+- `README_PYTHON.md` の説明は概ね現状に追従している
+- 必要なら `README.md` 側にも Python runtime の導線を追記する
+- `AGENTS.md` はインデックスに保ち、運用情報は `agent-docs/` に集約する
 
-- 現在は JS 側仕様を抽出して Python 側と比較している
-- 将来的に Python 側を正とするのか、JS 側を正とするのかを明確にする
-- 二重管理コストを減らす方法を決める
+### 7. ブランチ/マージ運用のルールを簡潔に残す
 
-## Priority 4: 開発フロー整備
-
-### 8. PR / push の準備
-
-- 現在の `feature/python-command-infra` ブランチを push して共有できる状態にする
-- 必要なら変更内容をまとめて PR 本文用の要約を作る
-
-### 9. ドキュメントの更新範囲を広げる
-
-- `README_PYTHON.md` は更新済み
-- 必要なら `README.md` に Python runtime や `just` / `pytest` / `ruff` の導線を追加する
-- mock client の位置づけと制約も明記する
+- `feature/python-command-infra` はすでにマージ済み
+- `fix/multiagent-inventory-init` もマージ済み
+- `feature/todo-followup` は今回の作業ブランチとして扱う
+- 次の作業でも変更ごとに短いブランチを切る運用を続ける
 
 ## Notes
 
-- 現時点では mock client により、Minecraft 非起動でも Python query bridge のテストは可能
-- ただし mineflayer 実体の移動、採掘、インベントリ同期などは実 Minecraft 環境で別途確認が必要
+- 現在の `develop` では、Python command registry / bridge / mock client / TOML profile は動作する
+- 直近の focus は「運用ルールの固定」と「mock/action テストの補強」

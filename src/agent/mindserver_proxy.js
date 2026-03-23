@@ -112,6 +112,22 @@ class MindServerProxy {
             }
 
             try {
+                const trimmed = data.message.trim();
+                if (trimmed.startsWith('!goal')) {
+                    const goalText = trimmed.match(/!goal\((.*)\)/)?.[1]?.trim();
+                    if (goalText) {
+                        this.agent.self_prompter.start(goalText.replace(/^"|"$/g, ''));
+                    }
+                    callback({ success: true, result: 'Goal set.' });
+                    return;
+                }
+
+                if (trimmed.startsWith('!stop')) {
+                    this.agent.self_prompter.stop();
+                    callback({ success: true, result: 'Stopped.' });
+                    return;
+                }
+
                 const result = await executeCommand(this.agent, data.message);
                 callback({ success: true, result });
             } catch (error) {
