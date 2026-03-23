@@ -16,3 +16,6 @@ check:
     uv run --group dev pytest
     uv run --group dev ruff check .
     uv run --group dev ruff format --check .
+
+catalog:
+    uv run python -c "from mindcraft_py.catalog import write_command_catalog; write_command_catalog()"
