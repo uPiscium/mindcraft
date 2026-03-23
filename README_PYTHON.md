@@ -148,6 +148,7 @@ wait()
 - `src/process/mock_agent_client.js`: Minecraft なしで接続できる mock agent client
 - `tests/test_python_commands.py`: Python command registry のテスト
 - `tests/test_mock_query_bridge.py`: mock client を使った query bridge の統合テスト
+- `tests/test_multiagent_inventory_init.py`: multi-agent タスクの初期インベントリ確認
 - `justfile`: Python向けのテスト・lint・format コマンド
 
 ## よくある問題
