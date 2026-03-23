@@ -51,3 +51,7 @@ just catalog
 ```
 
 Use `just catalog` to regenerate `mindcraft_py/command_catalog.json`.
+
+## Terminal logs
+
+The Python CLI tees stdout/stderr to `logs/YYYY-MM-DD/HHMM.log` when started through `main.py`.
