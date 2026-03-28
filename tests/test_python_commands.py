@@ -364,12 +364,19 @@ def test_execute_action_rejects_non_action_commands():
 
 
 def test_load_profile_supports_json_and_toml():
-    from pathlib import Path
-
     project_root = Path(__file__).resolve().parent.parent
-    json_profile = load_profile(project_root / "agents" / "Andy.json")
     toml_profile = load_profile(project_root / "agents" / "Andy.toml")
 
-    assert json_profile["name"] == "Andy"
     assert toml_profile["name"] == "Andy"
-    assert json_profile["model"]["api"] == toml_profile["model"]["api"]
+    assert toml_profile["model"]["api"] == "ollama"
+
+
+def test_load_profile_rejects_json_profiles():
+    project_root = Path(__file__).resolve().parent.parent
+
+    try:
+        load_profile(project_root / "agents" / "Andy.json")
+    except ValueError as error:
+        assert "Unsupported profile format" in str(error)
+    else:
+        raise AssertionError("Expected ValueError for JSON profile")

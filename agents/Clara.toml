@@ -1,4 +1,4 @@
-name = "Andy"
+name = "Clara"
 
 [model]
 api = "ollama"

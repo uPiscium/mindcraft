@@ -3,6 +3,7 @@ import settings from './settings.js';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { readFileSync } from 'fs';
+import toml from 'toml';
 
 function parseArguments() {
     return yargs(hideBin(process.argv))
@@ -66,7 +67,8 @@ if (process.env.LOG_ALL) {
 Mindcraft.init(true, settings.mindserver_port, settings.auto_open_ui);
 
 for (let profile of settings.profiles) {
-    const profile_json = JSON.parse(readFileSync(profile, 'utf8'));
-    settings.profile = profile_json;
+    const profileContent = readFileSync(profile, 'utf8');
+    const profileData = profile.endsWith('.toml') ? toml.parse(profileContent) : JSON.parse(profileContent);
+    settings.profile = profileData;
     Mindcraft.createAgent(settings);
 }

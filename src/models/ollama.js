@@ -5,13 +5,13 @@ export class Ollama {
     constructor(model_name, url, params) {
         this.model_name = model_name;
         this.params = params;
-        this.url = url || 'https://ollama.arc.upiscium.dev';
+        this.url = url || 'https://ollama-melchior.arc.upiscium.dev';
         this.chat_endpoint = '/api/chat';
         this.embedding_endpoint = '/api/embeddings';
     }
 
     async sendRequest(turns, systemMessage) {
-        let model = this.model_name || 'sweaterdog/andy-4:micro-q8_0';
+        let model = this.model_name || 'sweaterdog/andy-4:q8_0';
         let messages = strictFormat(turns);
         messages.unshift({ role: 'system', content: systemMessage });
         const maxAttempts = 5;
@@ -46,18 +46,13 @@ export class Ollama {
                 }
             }
 
-            const hasOpenTag = res.includes("<think>");
-            const hasCloseTag = res.includes("</think>");
-
-            if ((hasOpenTag && !hasCloseTag)) {
-                console.warn("Partial <think> block detected. Re-generating...");
+            const cleanedRes = this.stripThinkBlocks(res);
+            if (cleanedRes === null) {
+                console.warn('Partial <think> block detected. Re-generating...');
                 if (attempt < maxAttempts) continue;
-            }
-            if (hasCloseTag && !hasOpenTag) {
-                res = '<think>' + res;
-            }
-            if (hasOpenTag && hasCloseTag) {
-                res = res.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+                res = 'I thought too hard, sorry, try again.';
+            } else {
+                res = cleanedRes;
             }
             finalRes = res;
             break;
@@ -71,7 +66,7 @@ export class Ollama {
     }
 
     async embed(text) {
-        let model = this.model_name || 'embeddinggemma';
+        let model = this.model_name || 'embeddinggemma:latest';
         let body = { model: model, input: text };
         let res = await this.send(this.embedding_endpoint, body);
         return res['embedding'];
@@ -126,5 +121,16 @@ export class Ollama {
         });
         
         return this.sendRequest(imageMessages, systemMessage);
+    }
+
+    stripThinkBlocks(content) {
+        if (content == null) return '';
+        const text = String(content);
+        const openCount = (text.match(/<think>/g) || []).length;
+        const closeCount = (text.match(/<\/think>/g) || []).length;
+        if (openCount > closeCount) {
+            return null;
+        }
+        return text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
     }
 }

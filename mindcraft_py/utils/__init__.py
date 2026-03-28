@@ -1,4 +1,4 @@
-from .utils.text import (
+from .text import (
     strictFormat,
     strict_format,
     stringifyTurns,
