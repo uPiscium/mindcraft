@@ -71,7 +71,7 @@ mindcraft-py --task_path ./tasks/basic/single_agent.json --task_id gather_oak_lo
 ```
 
 Python 側でプロセスを制御したい場合は `mindcraft_py.runtime.MindcraftRuntime` の
-`start_agent_process()` / `stop_agent_process()` / `restart_agent_process()` を使います。
+`start_agent_process()` / `stop_agent()` / `restart_agent()` を使います。
 
 ## 実サーバに接続する場合
 
