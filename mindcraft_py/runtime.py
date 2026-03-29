@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from mindcraft_py.node_runtime import NodeRuntimeProcess
+
 
 class MindcraftRuntime:
     def __init__(self):
@@ -7,6 +9,7 @@ class MindcraftRuntime:
         self.host_public = False
         self.auto_open_ui = False
         self.agents = {}
+        self.node_runtime = NodeRuntimeProcess()
 
     def init(self, port=8080, host_public=False, auto_open_ui=True, startup_timeout=20):
         self.port = port
@@ -25,6 +28,26 @@ class MindcraftRuntime:
             "in_game": True,
         }
         return {"success": True, "error": None}
+
+    def start_agent_process(self, settings):
+        profile = settings.get("profile", {})
+        name = profile.get("name")
+        if not name:
+            raise ValueError("Agent name is required in profile")
+
+        profiles = (
+            [settings.get("profile_path")] if settings.get("profile_path") else None
+        )
+        return self.node_runtime.start(profiles=profiles)
+
+    def stop_agent_process(self):
+        self.node_runtime.stop()
+
+    def restart_agent_process(self, settings):
+        profiles = (
+            [settings.get("profile_path")] if settings.get("profile_path") else None
+        )
+        return self.node_runtime.restart(profiles=profiles)
 
     def execute_query_command(self, agent_name, message, timeout=60):
         agent = self.agents.get(agent_name)
