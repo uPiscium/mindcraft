@@ -3,6 +3,7 @@ from __future__ import annotations
 import time
 
 from mindcraft_py.agent_process import AgentProcess
+from mindcraft_py.mindserver_state import MindserverState
 from mindcraft_py.node_runtime import NodeRuntimeProcess
 
 
@@ -11,7 +12,7 @@ class MindcraftRuntime:
         self.port = None
         self.host_public = False
         self.auto_open_ui = False
-        self.agents = {}
+        self.agents = MindserverState()
         self.node_runtime = NodeRuntimeProcess()
         self.agent_processes = {}
 
@@ -26,12 +27,77 @@ class MindcraftRuntime:
         name = profile.get("name")
         if not name:
             raise ValueError("Agent name is required in profile")
-        self.agents[name] = {
-            "settings": settings,
-            "mock_client": bool(settings.get("mock_client")),
-            "in_game": True,
-        }
+        self.agents.register_agent(settings, settings.get("viewer_port", 0))
+        self.agents.set_in_game(name, True)
         return {"success": True, "error": None}
+
+    def register_agent(self, settings, viewer_port):
+        return self.agents.register_agent(settings, viewer_port)
+
+    def get_agent(self, agent_name):
+        return self.agents.get(agent_name)
+
+    def start_agent(self, agent_name):
+        agent = self.agent_processes.get(agent_name)
+        if not agent:
+            return None
+        return agent["agent_process"].force_restart()
+
+    def stop_agent_by_name(self, agent_name):
+        agent = self.agent_processes.get(agent_name)
+        if not agent:
+            return None
+        agent["agent_process"].stop()
+        self.agents.set_in_game(agent_name, False)
+        return True
+
+    def destroy_agent(self, agent_name):
+        agent = self.agent_processes.get(agent_name)
+        if not agent:
+            return None
+        agent["agent_process"].stop()
+        del self.agent_processes[agent_name]
+        self.agents.remove(agent_name)
+        return True
+
+    def logout_agent(self, agent_name):
+        return self.agents.set_in_game(agent_name, False)
+
+    def agents_status(self):
+        return self.agents.status()
+
+    def set_agent_settings(self, agent_name, settings):
+        return self.agents.set_settings(agent_name, settings)
+
+    def get_settings(self, agent_name):
+        agent = self.agents.get(agent_name)
+        if not agent:
+            return None
+        return agent["settings"]
+
+    def connect_agent_process(self, agent_name):
+        return self.agents.set_socket(agent_name, True)
+
+    def login_agent(self, agent_name):
+        agent = self.agents.set_socket(agent_name, True)
+        if agent:
+            self.agents.set_in_game(agent_name, True)
+        return agent
+
+    def disconnect_agent(self, agent_name):
+        agent = self.agents.set_socket(agent_name, False)
+        if agent:
+            self.agents.set_in_game(agent_name, False)
+        return agent
+
+    def set_full_state(self, agent_name, state):
+        return self.agents.set_full_state(agent_name, state)
+
+    def get_full_state(self, agent_name):
+        agent = self.agents.get(agent_name)
+        if not agent:
+            return None
+        return agent.get("full_state")
 
     def start_agent_process(self, settings):
         profile = settings.get("profile", {})
@@ -52,17 +118,29 @@ class MindcraftRuntime:
             "running": True,
             "last_restart": time.time(),
         }
+        self.agents.set_process(name, agent_process)
         return process
 
-    def stop_agent_process(self):
-        self.node_runtime.stop()
-
-    def stop_agent(self, agent_name):
-        agent_entry = self.agent_processes.get(agent_name)
-        if not agent_entry:
-            return
-        agent_entry["agent_process"].stop()
-        agent_entry["running"] = False
+    def create_agent_process(self, settings, mindserver_port):
+        profile = settings.get("profile", {})
+        name = profile.get("name")
+        if not name:
+            raise ValueError("Agent name is required in profile")
+        if settings.get("mock_client"):
+            return {
+                "type": "mock",
+                "name": name,
+                "mindserver_port": mindserver_port,
+                "settings": settings,
+            }
+        agent_process = AgentProcess(name, self.node_runtime)
+        return {
+            "type": "real",
+            "name": name,
+            "mindserver_port": mindserver_port,
+            "settings": settings,
+            "agent_process": agent_process,
+        }
 
     def restart_agent_process(self, settings):
         profiles = (

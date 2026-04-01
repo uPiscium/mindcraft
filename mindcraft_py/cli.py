@@ -4,7 +4,7 @@ import argparse
 import os
 import shutil
 import subprocess
-import sys
+import socket
 from pathlib import Path
 
 
@@ -41,6 +41,39 @@ def build_command(args, repo_root=None):
     return command, repo_root
 
 
+def is_port_open(host, port):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.settimeout(0.2)
+        return sock.connect_ex((host, port)) == 0
+
+
+def resolve_mindserver_port(preferred_port, host="127.0.0.1"):
+    if preferred_port is None:
+        preferred_port = 8080
+    preferred_port = int(preferred_port)
+    if not is_port_open(host, preferred_port):
+        return preferred_port
+    for candidate in range(preferred_port + 1, preferred_port + 101):
+        if not is_port_open(host, candidate):
+            return candidate
+    raise RuntimeError(
+        f"No free MindServer port found near {preferred_port}; set MINDSERVER_PORT manually."
+    )
+
+
+def choose_mindserver_port(requested_port, host="127.0.0.1"):
+    resolved_port = resolve_mindserver_port(requested_port, host=host)
+    if requested_port is not None and int(requested_port) != resolved_port:
+        print(
+            f"MindServer port {requested_port} is in use; switching to {resolved_port}."
+        )
+    return resolved_port
+
+
+def log_mindserver_port(port):
+    print(f"Using MindServer port {port}")
+
+
 def main(argv=None):
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -54,7 +87,14 @@ def main(argv=None):
     command, repo_root = build_command(args)
     command[0] = node_path
 
-    result = subprocess.run(command, cwd=repo_root, env=os.environ.copy())
+    env = os.environ.copy()
+    mindserver_port = choose_mindserver_port(
+        env.get("MINDSERVER_PORT"), host="127.0.0.1"
+    )
+    env["MINDSERVER_PORT"] = str(mindserver_port)
+    log_mindserver_port(mindserver_port)
+
+    result = subprocess.run(command, cwd=repo_root, env=env)
     return result.returncode
 
 

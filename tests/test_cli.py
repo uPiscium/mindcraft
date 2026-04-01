@@ -1,7 +1,11 @@
 from argparse import Namespace
 from pathlib import Path
 
-from mindcraft_py.cli import build_command
+from mindcraft_py.cli import (
+    build_command,
+    choose_mindserver_port,
+    resolve_mindserver_port,
+)
 from mindcraft_py.node_runtime import NodeRuntimeProcess
 
 
@@ -40,3 +44,29 @@ def test_node_runtime_build_command_uses_node_binary(tmp_path):
         "--task_id",
         "gather_oak_logs",
     ]
+
+
+def test_resolve_mindserver_port_prefers_free_port(monkeypatch):
+    def fake_is_port_open(host, port):
+        return port == 8080
+
+    monkeypatch.setattr("mindcraft_py.cli.is_port_open", fake_is_port_open)
+
+    assert resolve_mindserver_port(8080) == 8081
+
+
+def test_choose_mindserver_port_keeps_requested_when_free(monkeypatch):
+    monkeypatch.setattr("mindcraft_py.cli.is_port_open", lambda host, port: False)
+
+    assert choose_mindserver_port(8080) == 8080
+
+
+def test_choose_mindserver_port_logs_when_swapping(monkeypatch, capsys):
+    def fake_is_port_open(host, port):
+        return port == 8080
+
+    monkeypatch.setattr("mindcraft_py.cli.is_port_open", fake_is_port_open)
+
+    assert choose_mindserver_port(8080) == 8081
+    captured = capsys.readouterr()
+    assert "switching to 8081" in captured.out

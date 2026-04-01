@@ -234,3 +234,67 @@
 - [ ] フェーズ 5 以降: プロセス管理・mindserver・agent 移行
 - [x] `main.js` は TOML プロフィール読み込みに対応済み
 - [x] `src/models/ollama.js` と `mindcraft_py/models/ollama.py` に `<think>` 安定化処理を追加済み
+
+## 完全移行に向けた残タスク
+
+- Python に `mindserver` 相当を実装する
+- エージェント状態管理を Python 主導にする
+- UI と状態更新の通信層を Python へ寄せる
+- `src/mindcraft/mindcraft.js` を薄い互換層にする
+- `src/process/*` の JS 実装を最小ブリッジにする
+- 最後に JS 側の Mineflayer 非依存ロジックを削除する
+
+## JS に残す線引き
+
+- Mineflayer に直結する接続・操作処理
+- Minecraft サーバ接続の最小アダプタ
+- 既存 UI との一時的な互換ラッパー
+- Node でしか扱えない外部連携の最終ブリッジ
+
+## Python に寄せる対象
+
+- 設定読み込み
+- 起動 CLI
+- プロセス監視と再起動
+- コマンド解釈とプロンプト整形
+- モデル呼び出し
+- 状態管理とイベント集約
+
+## 完全移行の実装順
+
+1. `src/process/agent_process.js` を最小ブリッジに固定する
+2. `src/mindcraft/mindcraft.js` の起動・停止・再起動を Python 側イベントに寄せる
+3. Python に `mindserver` 相当の状態 API を作る
+4. UI が見ているエージェント状態を Python から返す
+5. `src/agent/` の Mineflayer 非依存部を Python 化する
+6. JS の Mineflayer 依存以外を段階的に削除する
+
+## 実装メモ
+
+- 既存の CLI とプロフィール読み込みはそのまま使える
+- 再起動ロジックは Python 側の `AgentProcess` を中心にする
+- JS 側は「接続するだけ」に寄せるほど後工程が楽になる
+
+## 現在の到達点
+
+- `settings.js` / `main.js` は TOML プロフィール前提で動く
+- `mindcraft_py/cli.py` はポート衝突を自動回避する
+- `mindcraft_py/agent_process.py` が再起動条件を保持している
+- `src/process/create_agent_process.js` は分岐を1箇所に集約している
+- `src/mindcraft/mindcraft.js` は agent 生成の配線のみを担当している
+
+## 次の一手
+
+- `mindserver` の状態管理 API を Python 側へ寄せる
+- `startAgent` / `stopAgent` / `destroyAgent` を Python イベントに置き換える
+- `src/mindcraft/mindcraft.js` の状態保持をさらに削る
+
+## 現在の進捗
+
+- [x] `MindcraftRuntime` に agent 登録/更新/取得 API を追加
+- [x] `README.py.md` に Python 側の状態 API を追記
+- [x] JS の agent 状態管理を `src/mindcraft/agent_registry.js` に分離
+- [ ] JS の `mindserver` から表示以外の状態管理を完全に切り離す
+- [ ] `createAgent` / `destroyAgent` / `startAgent` / `stopAgent` の最終実装を Python 側イベントに寄せる
+- [x] Python 側に `MindserverState` レジストリを追加
+- [x] JS 側の agent process 参照を `agent_registry.js` に寄せた

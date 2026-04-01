@@ -32,3 +32,14 @@ def test_agent_process_handle_exit_does_not_restart_too_fast():
     restarted = process.handle_exit(code=1, signal=None)
 
     assert restarted is False
+
+
+def test_agent_process_handle_exit_restarts_after_delay(monkeypatch):
+    node_runtime = FakeNodeRuntime()
+    process = AgentProcess("Andy", node_runtime)
+    process.start(profile_path="./agents/Andy.toml")
+    process.last_restart -= 11
+
+    restarted = process.handle_exit(code=1, signal=None)
+
+    assert restarted is True

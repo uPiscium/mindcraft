@@ -1,6 +1,6 @@
 # Python 利用手順
 
-このリポジトリでは、Minecraft 接続とエージェント制御の一部を Python から利用できます。
+このリポジトリでは、Python を中核にしつつ、既存の JS MindServer UI を可視化層として使えます。
 
 ## 前提
 
@@ -70,15 +70,20 @@ mindcraft-py --profiles ./agents/Andy.toml
 mindcraft-py --task_path ./tasks/basic/single_agent.json --task_id gather_oak_logs
 ```
 
+If port `8080` is already occupied, the Python CLI will try the next free port.
+You can still override it explicitly with `MINDSERVER_PORT`.
+The chosen port is printed on startup.
+
 Python 側でプロセスを制御したい場合は `mindcraft_py.runtime.MindcraftRuntime` の
 `start_agent_process()` / `stop_agent()` / `restart_agent()` を使います。
 
 ## 実サーバに接続する場合
 
 - `mock_client: True` のままだと Minecraft なしのモック実行になります。
-- 現状の Python 側は、コマンド処理・プロフィール読み込み・Ollama 通信の土台です。
-- Minecraft への実接続を行う起動は、いまは `node main.js --profiles ./agents/Andy.toml` が確実です。
-- Python からは、まずモックで挙動確認し、実接続は既存 JS 起動を使うのが安全です。
+- 現状の Python 側は、コマンド処理・プロフィール読み込み・Ollama 通信・プロセス制御の土台です。
+- Minecraft への実接続は、現状は `node main.js --profiles ./agents/Andy.toml` が確実です。
+- Python からも CLI 起動はできますが、内部では既存 JS/Mineflayer 経由の接続を使います。
+- `src/process/create_agent_process.js` は薄い分岐だけを持ち、実体は `mindcraft_py/node_agent_process.js` 側に寄っています。
 
 ### モック確認例
 
@@ -123,4 +128,9 @@ python -m pytest tests/test_mock_query_bridge.py tests/test_action_bridge_mock.p
 
 - `settings.js` の `profiles` も TOML 前提です。
 - `main.js` は TOML を読み込んでエージェントを起動できます。
+- `mindcraft_py.runtime.MindcraftRuntime` には、エージェント状態の登録・更新・取得を行う API が追加されています。
+- JS の MindServer は可視化/UI と Socket.IO の入口として残し、状態の実体は Python 側へ寄せています。
+- `mindcraft_py.mindserver_state.MindserverState` が Python 側の状態レジストリです。
+- `src/mindcraft/agent_registry.js` は JS 側の薄いブリッジとして残っています。
+- `src/mindcraft/agent_registry.js` で JS 側の agent 状態を薄く管理しつつ、Python 側の状態 API と合わせて移行しています。
 - まずは `agents/Andy.toml` で確認するのが簡単です。

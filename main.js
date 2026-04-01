@@ -70,5 +70,6 @@ for (let profile of settings.profiles) {
     const profileContent = readFileSync(profile, 'utf8');
     const profileData = profile.endsWith('.toml') ? toml.parse(profileContent) : JSON.parse(profileContent);
     settings.profile = profileData;
+    settings.profile_path = profile;
     Mindcraft.createAgent(settings);
 }

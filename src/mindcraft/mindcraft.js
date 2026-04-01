@@ -1,8 +1,8 @@
 import { createMindServer, registerAgent, numStateListeners } from './mindserver.js';
-import { AgentProcess } from '../process/agent_process.js';
-import { MockAgentClient } from '../process/mock_agent_client.js';
-import { getServer } from './mcserver.js';
+import { createAgentProcess } from '../process/create_agent_process.js';
 import open from 'open';
+import { removeAgent, setAgentInGame } from './agent_registry.js';
+import { setAgentProcess } from './agent_registry.js';
 
 let mindserver;
 let connected = false;
@@ -45,26 +45,10 @@ export async function createAgent(settings) {
     let init_message = settings.init_message || null;
 
     try {
-        try {
-            if (!settings.mock_client) {
-                const server = await getServer(settings.host, settings.port, settings.minecraft_version);
-                settings.host = server.host;
-                settings.port = server.port;
-                settings.minecraft_version = server.version;
-            }
-        } catch (error) {
-            console.warn(`Error getting server:`, error);
-            if (settings.minecraft_version === "auto") {
-                settings.minecraft_version = null;
-            }
-            console.warn(`Attempting to connect anyway...`);
-        }
-
-        const agentProcess = settings.mock_client
-            ? new MockAgentClient(agent_name, mindserver_port, settings)
-            : new AgentProcess(agent_name, mindserver_port);
-        await agentProcess.start(load_memory, init_message, agentIndex);
+        const agentProcess = createAgentProcess(agent_name, mindserver_port, settings);
+        await agentProcess.start(load_memory, init_message, agentIndex, settings.profile_path);
         agent_processes[settings.profile.name] = agentProcess;
+        setAgentProcess(agent_name, agentProcess);
     } catch (error) {
         console.error(`Error creating agent ${agent_name}:`, error);
         destroyAgent(agent_name);
@@ -96,6 +80,7 @@ export function stopAgent(agentName) {
     if (agent_processes[agentName]) {
         agent_processes[agentName].stop();
     }
+    setAgentInGame(agentName, false);
 }
 
 export function destroyAgent(agentName) {
@@ -103,6 +88,7 @@ export function destroyAgent(agentName) {
         agent_processes[agentName].stop();
         delete agent_processes[agentName];
     }
+    removeAgent(agentName);
 }
 
 export function shutdown() {
