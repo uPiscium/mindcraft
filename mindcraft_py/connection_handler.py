@@ -2,58 +2,13 @@ from __future__ import annotations
 
 import json
 import re
+from pathlib import Path
 
 
-ERROR_DEFINITIONS = {
-    "name_conflict": {
-        "keywords": [
-            "name_taken",
-            "duplicate_login",
-            "already connected",
-            "already logged in",
-            "username is already",
-        ],
-        "msg": "Name Conflict: The name is already in use or you are already logged in.",
-        "isFatal": True,
-    },
-    "access_denied": {
-        "keywords": ["whitelist", "not white-listed", "banned", "suspended", "verify"],
-        "msg": "Access Denied: You are not whitelisted or banned.",
-        "isFatal": True,
-    },
-    "server_full": {
-        "keywords": ["server is full", "full server"],
-        "msg": "Connection Failed: The server is full.",
-        "isFatal": False,
-    },
-    "version_mismatch": {
-        "keywords": ["outdated", "version", "client"],
-        "msg": "Version Mismatch: Client and server versions do not match.",
-        "isFatal": True,
-    },
-    "maintenance": {
-        "keywords": ["maintenance", "updating", "closed", "restarting"],
-        "msg": "Connection Failed: Server is under maintenance or restarting.",
-        "isFatal": False,
-    },
-    "network_error": {
-        "keywords": [
-            "timeout",
-            "timed out",
-            "connection lost",
-            "reset",
-            "refused",
-            "keepalive",
-        ],
-        "msg": "Network Error: Connection timed out or was lost.",
-        "isFatal": False,
-    },
-    "behavior": {
-        "keywords": ["flying", "spam", "speed"],
-        "msg": "Kicked: Removed from server due to flying, spamming, or invalid movement.",
-        "isFatal": True,
-    },
-}
+_ERROR_DEFINITIONS_PATH = Path(__file__).with_name("connection_errors.json")
+
+with _ERROR_DEFINITIONS_PATH.open("r", encoding="utf-8") as fh:
+    ERROR_DEFINITIONS = json.load(fh)
 
 
 def log(agent_name, msg):
