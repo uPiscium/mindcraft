@@ -37,6 +37,22 @@ def test_conversation_helpers():
     assert tag_message("hi") == "(FROM OTHER BOT)hi"
 
 
+def test_conversation_manager_state():
+    manager = ConversationManager()
+    manager.update_agents([{"name": "Andy", "in_game": True}, {"name": "Bob"}])
+
+    convo = manager.start_conversation("Bob")
+    convo.queue({"message": "hello"})
+
+    assert manager.is_other_agent("Bob") is True
+    assert manager.other_agent_in_game("Andy") is True
+    assert manager.in_conversation("Bob") is True
+    ended = manager.force_end_current_conversation()
+    assert ended is not None
+    assert ended["message"] == "hello"
+    assert manager.in_conversation() is False
+
+
 def test_action_manager_summary():
     am = ActionManager()
     assert am.get_bot_output_summary("ok") == "Action output:\nok"
