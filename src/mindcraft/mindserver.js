@@ -38,6 +38,9 @@ export function setAgentProcess(agentName, process) {
     const agent = getAgent(agentName);
     if (!agent) return null;
     agent.process = process;
+    if (process && process._startOptions) {
+        agent.start_options = process._startOptions;
+    }
     return agent;
 }
 
@@ -186,10 +189,12 @@ export function createMindServer(host_public = false, port = 8080) {
 
         socket.on('stop-agent', (agentName) => {
             mindcraft.stopAgent(agentName);
+            setAgentInGame(agentName, false);
         });
 
         socket.on('start-agent', (agentName) => {
             mindcraft.startAgent(agentName);
+            setAgentInGame(agentName, true);
         });
 
         socket.on('destroy-agent', (agentName) => {
