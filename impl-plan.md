@@ -282,12 +282,13 @@
 - `mindcraft_py/agent_process.py` が再起動条件を保持している
 - `src/process/create_agent_process.js` は分岐を1箇所に集約している
 - `src/mindcraft/mindcraft.js` は agent 生成の配線のみを担当している
+- `mindcraft_py/` 側に runtime/state/process の基盤が揃っている
 
 ## 次の一手
 
-- `mindserver` の状態管理 API を Python 側へ寄せる
-- `startAgent` / `stopAgent` / `destroyAgent` を Python イベントに置き換える
-- `src/mindcraft/mindcraft.js` の状態保持をさらに削る
+- `startAgent` / `stopAgent` / `destroyAgent` の最終委譲を Python 側へ寄せる
+- `src/agent/` の Mineflayer 非依存部を Python 化する
+- `mindserver` は UI / Socket.IO の可視化層として固定する
 
 ## 現在の進捗
 
@@ -298,3 +299,5 @@
 - [ ] `createAgent` / `destroyAgent` / `startAgent` / `stopAgent` の最終実装を Python 側イベントに寄せる
 - [x] Python 側に `MindserverState` レジストリを追加
 - [x] JS 側の agent process 参照を `agent_registry.js` に寄せた
+- [x] `mindserver` の start/stop の結果を Python 状態へ連動させた
+- [x] Python 側に runtime/state/process の基礎を展開した

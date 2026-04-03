@@ -1,29 +1,30 @@
 # Repository Guide
 
-This repo is a Node.js/Minecraft agent framework with many runtime modules and a small amount of test coverage.
+This repo is a Minecraft agent framework with both JS and Python runtime pieces.
 Use this file as the default operating guide for agentic edits in this workspace.
 
 ## Project Shape
 
-- Runtime entry point: `main.js`
-- Primary app code: `src/mindcraft/`, `src/models/`, `src/process/`, `src/utils/`
+- Runtime entry points: `main.js`, `mindcraft_py/__main__.py`
+- Primary app code: `src/mindcraft/`, `src/models/`, `src/process/`, `src/utils/`, `mindcraft_py/`
 - Example agents and profiles: `agents/`, `profiles/`
 - Task definitions: `tasks/`
 - Current test file(s): `tests/`
 - ESLint config: `eslint.config.js`
+- Migration focus: keep JS as the Mineflayer/UI bridge and move Mineflayer-independent runtime/state logic into `mindcraft_py/`
 
 ## Commands
 
 ### Install
 
 ```bash
-npm install
+just test
 ```
 
 ### Start the app
 
 ```bash
-npm start
+python -m mindcraft_py --profiles ./agents/Andy.toml
 ```
 
 Equivalent direct entry:
@@ -31,6 +32,11 @@ Equivalent direct entry:
 ```bash
 node main.js
 ```
+
+Python entrypoint notes:
+
+- `mindcraft_py` owns the runtime/state/process layer.
+- JS `mindserver` stays as the visible UI/Socket.IO layer for now.
 
 ### Run a task file
 
@@ -40,77 +46,74 @@ node main.js --task_path tasks/basic/single_agent.json --task_id gather_oak_logs
 
 ### Lint
 
-There is no dedicated `npm run lint` script. Use ESLint directly:
+Use the repository task runner for the standard checks:
 
 ```bash
-npx eslint .
+just lint
 ```
 
-Lint a single file:
+Format code:
 
 ```bash
-npx eslint src/models/ollama.js
+just fmt
 ```
 
-Lint a directory:
+Run the full verification suite:
 
 ```bash
-npx eslint src/models
+just check
 ```
 
 ### Tests
 
-There is no test runner script in `package.json`. Run test files directly with Node:
+Run the test suite:
 
 ```bash
-node tests/test_ollama_client.js
+just test
 ```
 
-Run a single test file by path the same way:
+Run a single test file directly when you need targeted feedback:
 
 ```bash
-node tests/<test-file>.js
+uv run --group dev pytest tests/<test-file>.py
 ```
 
-If you add more tests, keep them executable with plain `node` unless the repo grows a dedicated runner.
+If you add more tests, keep them runnable through the existing task runner or direct test command.
 
 ### Build
 
-There is no formal build step.
+There is no separate build step.
 The closest validation is:
 
 ```bash
-npx eslint . && node tests/test_ollama_client.js
+just check
 ```
 
 ## Style Rules
 
 ### Modules and imports
 
-- Use ES modules everywhere; this repo is configured with `"type": "module"`.
-- Prefer `import`/`export` over CommonJS.
-- Group imports by origin: built-ins, third-party packages, then local files.
-- Keep import paths explicit and file extensions included for local imports.
+- Use the idioms of the file's language and runtime.
+- Prefer explicit imports/exports over implicit globals.
+- Group imports by origin: standard library/built-ins, third-party packages, then local files.
+- Keep import paths explicit and file extensions included for local files when the language requires them.
 - Prefer named imports when only one or two bindings are needed.
 - Keep imports alphabetized within each group when practical.
 
 ### Formatting
 
-- Use semicolons; ESLint enforces them.
-- Prefer single quotes for strings in JS source when editing existing code.
-- Use 4-space indentation in this codebase.
+- Use the project's formatter/linter conventions.
+- Keep indentation consistent with the surrounding file.
 - Prefer trailing commas only when the surrounding file already uses them.
 - Keep line length reasonable; wrap long argument lists and object literals.
-- Avoid noisy formatting churn; follow the surrounding file’s local style.
+- Avoid noisy formatting churn; follow the surrounding file's local style.
 
 ### Syntax and types
 
-- This is plain JavaScript, not TypeScript.
-- Favor clear runtime checks over type annotations.
-- Use `const` by default; use `let` only when reassignment is required.
-- Avoid `var`.
+- Favor clear runtime checks over unnecessary abstraction.
+- Use immutable bindings by default; use mutable bindings only when reassignment is required.
 - Keep functions small and single-purpose where possible.
-- Prefer explicit object shapes in code over deep nested mutation.
+- Prefer explicit object/data shapes over deep nested mutation.
 
 ### Naming
 
@@ -122,8 +125,8 @@ npx eslint . && node tests/test_ollama_client.js
 
 ### Async and promises
 
-- Await promises or handle them explicitly; `no-floating-promise` is enabled.
-- Do not introduce fire-and-forget promises unless there is a clear reason and the error path is handled.
+- Await promises or handle them explicitly.
+- Do not introduce fire-and-forget async work unless there is a clear reason and the error path is handled.
 - Prefer `async`/`await` over chained `.then()` calls for new code.
 - Use `try`/`catch` around external I/O, process spawning, and network calls.
 
@@ -145,24 +148,26 @@ npx eslint . && node tests/test_ollama_client.js
 
 ### Logging
 
-- Use `console.log`/`console.warn`/`console.error` consistently with the surrounding module.
+- Use the existing logging style of the surrounding module.
 - Keep logs concise and operational.
 - Do not add verbose debug logging unless it materially helps debugging.
 
 ## Repository-Specific Patterns
 
-- `settings.js` is the central runtime configuration object; it is mutated by `main.js` based on CLI args and environment variables.
+- `settings.js` is the central runtime configuration object for the JS side; it is mutated by `main.js` based on CLI args and environment variables.
+- `mindcraft_py/` contains the Python runtime/state layer and should be kept aligned with the JS-facing wrappers.
+- `README.py.md` and `impl-plan.md` describe the current migration state and should be kept in sync with code changes.
 - `src/utils/text.js` contains message-shaping helpers used by model adapters; be careful not to change turn ordering semantics casually.
 - `src/models/ollama.js` shows the expected adapter pattern: request shaping, retry handling, and normalization of model output.
 - `src/process/agent_process.js` handles process lifecycle and restart behavior; keep signal handling and restart safeguards intact.
-- Many files assume browser globals or Node globals configured through ESLint; do not add globals casually.
+- `src/mindcraft/agent_registry.js` is the thin bridge for shared agent state on the JS side.
 
 ## Testing Guidance
 
-- Prefer adding a focused Node-executable test in `tests/` for behavioral changes.
+- Prefer adding a focused test in `tests/` for behavioral changes.
 - If a change affects a model adapter, add a narrow regression test near the affected logic.
-- Run the most specific test file first, then `npx eslint .` before finishing.
-- For cross-file changes, validate the affected startup path with `node main.js` if feasible.
+- Run the most specific test file first, then the full verification task before finishing.
+- For cross-file changes, validate the affected startup path with the relevant entry point if feasible.
 
 ## When Editing
 
@@ -180,6 +185,6 @@ npx eslint . && node tests/test_ollama_client.js
 
 ## Practical Defaults
 
-- For most edits: run `npx eslint <file>` and the relevant `node tests/<file>.js` test.
+- For most edits: run the most targeted `just` task and the relevant direct test command.
 - For startup issues: inspect `main.js`, `settings.js`, and the relevant module in `src/`.
 - For model behavior changes: verify the adapter against `src/models/ollama.js` style and update or add a regression test.
