@@ -11,6 +11,7 @@ from mindcraft_py.mindserver_proxy import (
     send_bot_chat_to_server,
     send_output_to_server,
 )
+from mindcraft_py.self_prompter import ACTIVE, PAUSED, STOPPED, SelfPrompterState
 
 
 def test_history_save_load_round_trip(tmp_path):
@@ -64,3 +65,15 @@ def test_mindserver_proxy_helpers():
     assert proxy.get_num_other_agents() == 1
     assert send_bot_chat_to_server("Andy", {"message": "hi"})["agentName"] == "Andy"
     assert send_output_to_server("Andy", "hello")["message"] == "hello"
+
+
+def test_self_prompter_state():
+    sp = SelfPrompterState()
+    assert sp.start("goal") is None
+    assert sp.is_active() is True
+    assert sp.should_interrupt(True) is False
+    sp.pause()
+    assert sp.state == PAUSED
+    sp.stop()
+    assert sp.state == STOPPED
+    assert SelfPrompterState().handle_load("goal", ACTIVE) is None

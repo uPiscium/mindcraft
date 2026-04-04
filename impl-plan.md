@@ -302,3 +302,4 @@
 - [x] `mindserver` の start/stop の結果を Python 状態へ連動させた
 - [x] Python 側に runtime/state/process の基礎を展開した
 - [x] 例外種別定義を Python/JS 共有ファイルに切り出した
+- [x] self-prompt 状態の Python 側ヘルパーを追加した
