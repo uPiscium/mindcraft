@@ -12,9 +12,38 @@ class History:
         self.full_history_fp = None
         self.turns = []
         self.memory = ""
+        self.max_messages = 30
+        self.summary_chunk_size = 5
 
     def get_history(self):
         return json.loads(json.dumps(self.turns))
+
+    def add(self, name, content):
+        role, message = self._normalize_turn(name, content)
+        self.turns.append({"role": role, "content": message})
+        return self._maybe_chunk_turns()
+
+    def _normalize_turn(self, name, content):
+        if name == "system":
+            return "system", content
+        if name != self.name:
+            return "user", f"{name}: {content}"
+        return "assistant", content
+
+    def _build_chunk(self):
+        chunk = self.turns[: self.summary_chunk_size]
+        remaining = self.turns[self.summary_chunk_size :]
+        while remaining and remaining[0]["role"] == "assistant":
+            chunk.append(remaining.pop(0))
+        self.turns = remaining
+        return chunk
+
+    def _maybe_chunk_turns(self):
+        if len(self.turns) < self.max_messages:
+            return None
+        chunk = self._build_chunk()
+        self.append_full_history(chunk)
+        return chunk
 
     def append_full_history(self, to_store):
         histories_dir = self.base_dir / self.name / "histories"
@@ -34,7 +63,22 @@ class History:
         last_sender=None,
     ):
         self.memory_fp.parent.mkdir(parents=True, exist_ok=True)
-        payload = {
+        payload = self.build_payload(
+            self_prompting_state=self_prompting_state,
+            self_prompt=self_prompt,
+            task_start=task_start,
+            last_sender=last_sender,
+        )
+        self.memory_fp.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+    def build_payload(
+        self,
+        self_prompting_state=None,
+        self_prompt=None,
+        task_start=None,
+        last_sender=None,
+    ):
+        return {
             "memory": self.memory,
             "turns": self.turns,
             "self_prompting_state": self_prompting_state,
@@ -42,7 +86,6 @@ class History:
             "taskStart": task_start,
             "last_sender": last_sender,
         }
-        self.memory_fp.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
     def load(self):
         if not self.memory_fp.exists():

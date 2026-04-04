@@ -30,6 +30,19 @@ def test_history_save_load_round_trip(tmp_path):
     assert reloaded.turns == [{"role": "user", "content": "hello"}]
 
 
+def test_history_add_and_chunking(tmp_path):
+    hist = History("Andy", base_dir=tmp_path)
+    hist.max_messages = 2
+    hist.summary_chunk_size = 1
+
+    hist.add("system", "notice")
+    chunk = hist.add("Bob", "hello")
+
+    assert chunk is not None
+    assert hist.turns == [{"role": "user", "content": "Bob: hello"}]
+    assert chunk[0]["role"] == "system"
+
+
 def test_conversation_helpers():
     convo = Conversation("Bob")
     convo.queue({"message": "hello"})
