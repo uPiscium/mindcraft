@@ -85,6 +85,13 @@ Python 側でプロセスを制御したい場合は `mindcraft_py.runtime.Mindc
 - 主要な回帰確認は `tests/` の Python テストで追えます。
 - 最終確認では Minecraft サーバ接続、ログイン、スポーン、応答生成まで確認できました。
 
+## 実装済みの拡張モジュール
+
+- `mindcraft_py.task_coordinator` に、中央タスク管理機構の `AcquireTask` / `YieldTask` 相当を追加しました。
+- `mindcraft_py.environment` に、空間情報の要約とコンテキストベースのインベントリ抽出を追加しました。
+- `mindcraft_py.llm_gateway` に、JSON Schema 付きの生成要求と再試行付きパース処理を追加しました。
+- これらは `mindcraft_py` のトップレベルからも再エクスポートされています。
+
 ## 実サーバに接続する場合
 
 - `mock_client: True` のままだと Minecraft なしのモック実行になります。
@@ -125,6 +132,12 @@ runtime.create_agent({
 
 ```bash
 python -m pytest tests/test_python_commands.py tests/test_ollama_adapter.py
+```
+
+追加した拡張の確認は次でも行えます。
+
+```bash
+python -m pytest tests/test_task_coordinator.py tests/test_environment_helpers.py tests/test_llm_gateway.py
 ```
 
 エージェント起動確認まで含めるなら:
