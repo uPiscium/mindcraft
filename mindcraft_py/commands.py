@@ -46,7 +46,10 @@ _DEFAULT_COMMAND_SPECS = [
     CommandSpec("!savedPlaces", "List all saved locations."),
     CommandSpec(
         "!checkBlueprintLevel",
-        "Check if the level is complete and what blocks still need to be placed for the blueprint",
+        (
+            "Check if the level is complete and what blocks still need to be "
+            "placed for the blueprint"
+        ),
         params={"levelNum": CommandParam("int", "The level number to check.")},
     ),
     CommandSpec(
@@ -60,7 +63,12 @@ _DEFAULT_COMMAND_SPECS = [
     ),
     CommandSpec(
         "!getCraftingPlan",
-        "Provides a comprehensive crafting plan for a specified item. This includes a breakdown of required ingredients, the exact quantities needed, and an analysis of missing ingredients or extra items needed based on the bot's current inventory.",
+        (
+            "Provides a comprehensive crafting plan for a specified item. This "
+            "includes a breakdown of required ingredients, the exact quantities "
+            "needed, and an analysis of missing ingredients or extra items "
+            "needed based on the bot's current inventory."
+        ),
         params={
             "targetItem": CommandParam(
                 "string", "The item that we are trying to craft"
@@ -93,7 +101,10 @@ _DEFAULT_COMMAND_SPECS = [
         params={
             "prompt": CommandParam(
                 "string",
-                "A natural language prompt to guide code generation. Make a detailed step-by-step plan.",
+                (
+                    "A natural language prompt to guide code generation. Make "
+                    "a detailed step-by-step plan."
+                ),
             )
         },
         kind="action",

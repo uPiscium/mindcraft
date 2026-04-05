@@ -173,7 +173,13 @@ class MindcraftRuntime:
         if not agent:
             raise ValueError(f"Agent '{agent_name}' not found.")
         if message.startswith("!stats"):
-            return "STATS\n- Position: x: 0.00, y: 64.00, z: 0.00\n- Gamemode: creative\n- Health: 20 / 20\n- Hunger: 20 / 20\n- Biome: plains\n- Weather: Clear\n- Time: Morning\n- Current Action: Idle\n- Nearby Human Players: None.\n- Nearby Bot Players: None."
+            return (
+                "STATS\n- Position: x: 0.00, y: 64.00, z: 0.00\n- Gamemode: "
+                "creative\n- Health: 20 / 20\n- Hunger: 20 / 20\n- Biome: "
+                "plains\n- Weather: Clear\n- Time: Morning\n- Current "
+                "Action: Idle\n- Nearby Human Players: None.\n- Nearby Bot "
+                "Players: None."
+            )
         if message.startswith("!inventory"):
             return "INVENTORY: Nothing\nWEARING: Nothing"
         if message.startswith("!nearbyBlocks"):

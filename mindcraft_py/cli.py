@@ -3,8 +3,8 @@ from __future__ import annotations
 import argparse
 import os
 import shutil
-import subprocess
 import socket
+import subprocess
 from pathlib import Path
 
 
@@ -57,7 +57,8 @@ def resolve_mindserver_port(preferred_port, host="127.0.0.1"):
         if not is_port_open(host, candidate):
             return candidate
     raise RuntimeError(
-        f"No free MindServer port found near {preferred_port}; set MINDSERVER_PORT manually."
+        f"No free MindServer port found near {preferred_port}; "
+        "set MINDSERVER_PORT manually."
     )
 
 

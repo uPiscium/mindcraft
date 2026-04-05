@@ -1,6 +1,3 @@
-from __future__ import annotations
-
-
 STOPPED = 0
 ACTIVE = 1
 PAUSED = 2

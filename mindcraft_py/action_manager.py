@@ -19,7 +19,9 @@ class ActionManager:
             return ""
         if len(output) > 500:
             return (
-                f"Action output is very long ({len(output)} chars) and has been shortened.\n"
-                f"First outputs:\n{output[:250]}\n...skipping many lines.\nFinal outputs:\n {output[-250:]}"
+                f"Action output is very long ({len(output)} chars) and has been "
+                f"shortened.\n"
+                f"First outputs:\n{output[:250]}\n...skipping many lines.\n"
+                f"Final outputs:\n {output[-250:]}"
             )
         return "Action output:\n" + str(output)

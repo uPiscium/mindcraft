@@ -4,7 +4,6 @@ import json
 import re
 from pathlib import Path
 
-
 _ERROR_DEFINITIONS_PATH = Path(__file__).with_name("connection_errors.json")
 
 with _ERROR_DEFINITIONS_PATH.open("r", encoding="utf-8") as fh:
@@ -55,6 +54,9 @@ def validate_name_format(name):
     if not name or not re.match(r"^[a-zA-Z0-9_]{3,16}$", name):
         return {
             "success": False,
-            "msg": f"[LoginGuard] Invalid name '{name}'. Must be 3-16 alphanumeric/underscore characters.",
+            "msg": (
+                f"[LoginGuard] Invalid name '{name}'. Must be 3-16 "
+                "alphanumeric/underscore characters."
+            ),
         }
     return {"success": True}

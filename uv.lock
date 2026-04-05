@@ -180,6 +180,7 @@ dependencies = [
     { name = "pandas" },
     { name = "prettytable" },
     { name = "python-socketio", extra = ["client"] },
+    { name = "requests" },
     { name = "tqdm" },
 ]
 
@@ -196,6 +197,7 @@ requires-dist = [
     { name = "pandas", specifier = "==2.2.3" },
     { name = "prettytable", specifier = "==3.16.0" },
     { name = "python-socketio", extras = ["client"], specifier = ">=5.13.0,<6" },
+    { name = "requests", specifier = ">=2.31.0" },
     { name = "tqdm", specifier = "==4.62.3" },
 ]
 

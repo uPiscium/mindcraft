@@ -1,1 +1,3 @@
-from .ollama import Ollama
+from .ollama import Ollama as Ollama
+
+__all__ = ["Ollama"]
