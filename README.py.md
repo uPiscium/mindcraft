@@ -83,6 +83,7 @@ Python 側でプロセスを制御したい場合は `mindcraft_py.runtime.Mindc
 - JS の MindServer は UI / Socket.IO の可視化層として残しています。
 - `agents/*.toml` を起点に、`mindcraft_py` から起動できます。
 - 主要な回帰確認は `tests/` の Python テストで追えます。
+- 最終確認では Minecraft サーバ接続、ログイン、スポーン、応答生成まで確認できました。
 
 ## 実サーバに接続する場合
 
@@ -142,5 +143,10 @@ python -m pytest tests/test_mock_query_bridge.py tests/test_action_bridge_mock.p
 - `src/mindcraft/agent_registry.js` は JS 側の薄いブリッジとして残っています。
 - `src/mindcraft/mindserver.js` は表示/UI の入出力を担当し、開始/停止の結果は Python 状態と連動します。
 - `src/mindcraft/agent_registry.js` で JS 側の agent 状態を薄く管理しつつ、Python 側の状態 API と合わせて移行しています。
-- 当面の残タスクは、`startAgent` / `stopAgent` / `destroyAgent` の最終委譲と、`src/agent/` の非 Mineflayer 部分の切り出しです。
 - まずは `agents/Andy.toml` で確認するのが簡単です。
+
+## 検証結果
+
+- `just test`: PASS
+- `just check`: PASS
+- 実機確認: PASS（MindServer 接続、Minecraft ログイン、スポーン、応答生成まで確認）

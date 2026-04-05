@@ -295,11 +295,17 @@
 - [x] `MindcraftRuntime` に agent 登録/更新/取得 API を追加
 - [x] `README.py.md` に Python 側の状態 API を追記
 - [x] JS の agent 状態管理を `src/mindcraft/agent_registry.js` に分離
-- [ ] JS の `mindserver` から表示以外の状態管理を完全に切り離す
-- [ ] `createAgent` / `destroyAgent` / `startAgent` / `stopAgent` の最終実装を Python 側イベントに寄せる
+- [x] JS の `mindserver` から表示以外の状態管理を完全に切り離す
+- [x] `createAgent` / `destroyAgent` / `startAgent` / `stopAgent` の最終実装を Python 側イベントに寄せる
 - [x] Python 側に `MindserverState` レジストリを追加
 - [x] JS 側の agent process 参照を `agent_registry.js` に寄せた
 - [x] `mindserver` の start/stop の結果を Python 状態へ連動させた
 - [x] Python 側に runtime/state/process の基礎を展開した
 - [x] 例外種別定義を Python/JS 共有ファイルに切り出した
 - [x] self-prompt 状態の Python 側ヘルパーを追加した
+
+## 最終検証
+
+- `just test`: PASS
+- `just check`: PASS
+- 実機確認: PASS（MindServer 接続、Minecraft ログイン、スポーン、応答生成まで確認）

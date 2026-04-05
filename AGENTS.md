@@ -161,6 +161,7 @@ just check
 - `src/models/ollama.js` shows the expected adapter pattern: request shaping, retry handling, and normalization of model output.
 - `src/process/agent_process.js` handles process lifecycle and restart behavior; keep signal handling and restart safeguards intact.
 - `src/mindcraft/agent_registry.js` is the thin bridge for shared agent state on the JS side.
+- Final verification should include `just test`, `just check`, and a live startup check when feasible.
 
 ## Testing Guidance
 
