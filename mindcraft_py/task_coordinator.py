@@ -10,15 +10,10 @@ LOCKED = "LOCKED"
 COMPLETED = "COMPLETED"
 FAILED = "FAILED"
 
-HIGH_VRAM = 1
-FAST_COMPUTE = 2
-LOW_RESOURCE = 3
-
 
 @dataclass
 class TaskEntity:
     id: str
-    capability_level: int
     payload: str
     state: str = AVAILABLE
     lock_metadata: dict[str, Any] | None = None
@@ -65,21 +60,17 @@ class CentralTaskCoordinator:
 
     add_task = register_task
 
-    def acquire_task(self, requester_id: str, capability: int) -> dict[str, Any]:
+    def acquire_task(self, requester_id: str) -> dict[str, Any]:
         with self._lock:
             eligible = [
-                task
-                for task in self._tasks.values()
-                if task.state == AVAILABLE and task.capability_level <= capability
+                task for task in self._tasks.values() if task.state == AVAILABLE
             ]
             if not eligible:
-                raise ConflictError(
-                    "No available task matches the requested capability."
-                )
+                raise ConflictError("No available task matches the request.")
 
             task = sorted(
                 eligible,
-                key=lambda item: (item.capability_level, item.priority, item.id),
+                key=lambda item: (item.priority, item.id),
             )[0]
             task.state = LOCKED
             task.lock_metadata = {
@@ -159,10 +150,6 @@ class CentralTaskCoordinator:
         if not task_id:
             raise ValueError("Task id is required.")
 
-        capability_level_value = data.get("capability_level")
-        if capability_level_value is None:
-            raise ValueError("Task capability_level is required.")
-        capability_level = int(capability_level_value)
         payload = str(data.get("payload", ""))
         state = str(data.get("state", AVAILABLE))
         lock_metadata = data.get("lock_metadata")
@@ -172,7 +159,6 @@ class CentralTaskCoordinator:
 
         return TaskEntity(
             id=task_id,
-            capability_level=capability_level,
             payload=payload,
             state=state,
             lock_metadata=lock_metadata,
@@ -183,7 +169,6 @@ class CentralTaskCoordinator:
     def _serialize_task(self, task: TaskEntity) -> dict[str, Any]:
         return {
             "id": task.id,
-            "capability_level": task.capability_level,
             "state": task.state,
             "payload": task.payload,
             "lock_metadata": task.lock_metadata,

@@ -15,8 +15,8 @@ class FakeTaskPool:
         self.calls.append(("list_tasks",))
         return [{"id": "task-1"}]
 
-    def acquire_task(self, requester_id, capability):
-        self.calls.append(("acquire_task", requester_id, capability))
+    def acquire_task(self, requester_id):
+        self.calls.append(("acquire_task", requester_id))
         return {"id": "task-1", "state": "LOCKED"}
 
     def yield_task(self, requester_id, task_id, reason):
@@ -56,10 +56,10 @@ def test_runtime_acquire_task_delegates_to_task_pool():
     runtime_any = cast(Any, runtime)
     runtime_any.task_pool = FakeTaskPool()
 
-    result = runtime.acquire_task("agent-a", 2)
+    result = runtime.acquire_task("agent-a")
 
     assert result == {"id": "task-1", "state": "LOCKED"}
-    assert runtime_any.task_pool.calls == [("acquire_task", "agent-a", 2)]
+    assert runtime_any.task_pool.calls == [("acquire_task", "agent-a")]
 
 
 def test_runtime_yield_task_delegates_to_task_pool():

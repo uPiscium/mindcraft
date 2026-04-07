@@ -5,6 +5,8 @@
   - `AcquireTask` 相当のアトミックな取得処理を実装
   - `YieldTask` 相当の返却処理と履歴追記を実装
   - ロックタイムアウトの解放処理を実装
+  - `depends_on` を持つタスク依存を扱えるようにした
+  - capability レベルによる絞り込みは削除した
 
 - `mindcraft_py/environment.py`
   - `TranslateSpatialData` を実装

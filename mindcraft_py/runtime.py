@@ -101,8 +101,8 @@ class MindcraftRuntime:
     def list_tasks(self):
         return self.task_pool.list_tasks()
 
-    def acquire_task(self, requester_id, capability):
-        return self.task_pool.acquire_task(requester_id, capability)
+    def acquire_task(self, requester_id):
+        return self.task_pool.acquire_task(requester_id)
 
     def yield_task(self, requester_id, task_id, reason):
         return self.task_pool.yield_task(requester_id, task_id, reason)
