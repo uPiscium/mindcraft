@@ -140,6 +140,12 @@ python -m pytest tests/test_python_commands.py tests/test_ollama_adapter.py
 python -m pytest tests/test_task_coordinator.py tests/test_environment_helpers.py tests/test_llm_gateway.py
 ```
 
+内部ロジック寄りの単体確認は次です。
+
+```bash
+python -m pytest tests/test_task_coordinator_unit.py tests/test_runtime_task_pool_unit.py
+```
+
 エージェント起動確認まで含めるなら:
 
 ```bash

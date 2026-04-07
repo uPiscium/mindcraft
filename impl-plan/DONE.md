@@ -27,7 +27,9 @@
   - `tests/test_task_coordinator.py`
   - `tests/test_environment_helpers.py`
   - `tests/test_llm_gateway.py`
+  - `tests/test_task_coordinator_unit.py`
+  - `tests/test_runtime_task_pool_unit.py`
 
 - 検証
   - `just check` 通過
-  - `pytest` 全 60 件通過
+  - `pytest` 全 76 件通過
