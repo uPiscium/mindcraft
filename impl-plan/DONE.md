@@ -14,10 +14,16 @@
   - `GenerateAction` 相当のスキーマ付き生成ゲートウェイを実装
   - JSON パース失敗時の再試行ループを実装
 
+- `mindcraft_py/runtime.py`
+  - `CentralTaskCoordinator` を runtime に接続
+  - `register_task` / `list_tasks` / `acquire_task` / `yield_task` を公開
+  - `shutdown()` でタスクプールをクリア
+
 - `mindcraft_py/__init__.py`
   - 上記モジュールの主要シンボルを再エクスポート
 
 - テスト
+  - `tests/test_runtime_task_pool.py`
   - `tests/test_task_coordinator.py`
   - `tests/test_environment_helpers.py`
   - `tests/test_llm_gateway.py`

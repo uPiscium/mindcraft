@@ -48,20 +48,22 @@ class CentralTaskCoordinator:
         self._tasks: dict[str, TaskEntity] = {}
         self._next_priority = 0
         for task in tasks or []:
-            self.add_task(task)
+            self.register_task(task)
 
-    def add_task(
+    def register_task(
         self,
         task: TaskEntity | dict[str, Any] | None = None,
         **task_fields: Any,
-    ) -> TaskEntity:
+    ) -> dict[str, Any]:
         with self._lock:
             entity = self._coerce_task(task, task_fields)
             if entity.priority == 0:
                 self._next_priority += 1
                 entity.priority = self._next_priority
             self._tasks[entity.id] = entity
-            return entity
+            return self._serialize_task(entity)
+
+    add_task = register_task
 
     def acquire_task(self, requester_id: str, capability: int) -> dict[str, Any]:
         with self._lock:
@@ -135,6 +137,10 @@ class CentralTaskCoordinator:
     def list_tasks(self) -> list[dict[str, Any]]:
         with self._lock:
             return [self._serialize_task(task) for task in self._tasks.values()]
+
+    def clear(self) -> None:
+        with self._lock:
+            self._tasks.clear()
 
     def _coerce_task(
         self,

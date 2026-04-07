@@ -5,6 +5,7 @@ import time
 from mindcraft_py.agent_process import AgentProcess
 from mindcraft_py.mindserver_state import MindserverState
 from mindcraft_py.node_runtime import NodeRuntimeProcess
+from mindcraft_py.task_coordinator import CentralTaskCoordinator
 
 
 class MindcraftRuntime:
@@ -15,6 +16,7 @@ class MindcraftRuntime:
         self.agents = MindserverState()
         self.node_runtime = NodeRuntimeProcess()
         self.agent_processes = {}
+        self.task_pool = CentralTaskCoordinator()
 
     def init(self, port=8080, host_public=False, auto_open_ui=True, startup_timeout=20):
         self.port = port
@@ -92,6 +94,18 @@ class MindcraftRuntime:
 
     def set_full_state(self, agent_name, state):
         return self.agents.set_full_state(agent_name, state)
+
+    def register_task(self, task=None, **task_fields):
+        return self.task_pool.register_task(task, **task_fields)
+
+    def list_tasks(self):
+        return self.task_pool.list_tasks()
+
+    def acquire_task(self, requester_id, capability):
+        return self.task_pool.acquire_task(requester_id, capability)
+
+    def yield_task(self, requester_id, task_id, reason):
+        return self.task_pool.yield_task(requester_id, task_id, reason)
 
     def get_full_state(self, agent_name):
         agent = self.agents.get(agent_name)
@@ -210,3 +224,4 @@ class MindcraftRuntime:
 
     def shutdown(self):
         self.agents.clear()
+        self.task_pool.clear()
