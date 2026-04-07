@@ -5,7 +5,9 @@ from mindcraft_py.task_coordinator import AVAILABLE, LOCKED
 def test_register_task_keeps_registered_task():
     runtime = MindcraftRuntime()
 
-    task = runtime.register_task({"id": "task-1", "payload": "mine logs"})
+    task = runtime.register_task(
+        {"id": "task-1", "payload": "mine logs", "depends_on": []}
+    )
 
     assert task["id"] == "task-1"
     assert task["state"] == AVAILABLE
@@ -13,14 +15,14 @@ def test_register_task_keeps_registered_task():
 
 def test_list_tasks_returns_registered_tasks():
     runtime = MindcraftRuntime()
-    runtime.register_task({"id": "task-1", "payload": "mine logs"})
+    runtime.register_task({"id": "task-1", "payload": "mine logs", "depends_on": []})
 
     assert runtime.list_tasks()[0]["id"] == "task-1"
 
 
 def test_acquire_task_locks_matching_task():
     runtime = MindcraftRuntime()
-    runtime.register_task({"id": "task-1", "payload": "a"})
+    runtime.register_task({"id": "task-1", "payload": "a", "depends_on": []})
 
     task = runtime.acquire_task("agent-a")
 
@@ -34,6 +36,7 @@ def test_acquire_task_prefers_higher_priority_task():
         {
             "id": "task-low",
             "payload": "a",
+            "depends_on": [],
             "priority": 2,
         }
     )
@@ -41,6 +44,7 @@ def test_acquire_task_prefers_higher_priority_task():
         {
             "id": "task-high",
             "payload": "b",
+            "depends_on": [],
             "priority": 1,
         }
     )
@@ -52,7 +56,7 @@ def test_acquire_task_prefers_higher_priority_task():
 
 def test_yield_task_rejects_wrong_owner():
     runtime = MindcraftRuntime()
-    runtime.register_task({"id": "task-1", "payload": "a"})
+    runtime.register_task({"id": "task-1", "payload": "a", "depends_on": []})
     runtime.acquire_task("agent-a")
 
     try:
@@ -65,7 +69,7 @@ def test_yield_task_rejects_wrong_owner():
 
 def test_yield_task_restores_availability_and_history():
     runtime = MindcraftRuntime()
-    runtime.register_task({"id": "task-1", "payload": "a"})
+    runtime.register_task({"id": "task-1", "payload": "a", "depends_on": []})
     runtime.acquire_task("agent-a")
 
     result = runtime.yield_task("agent-a", "task-1", "done")

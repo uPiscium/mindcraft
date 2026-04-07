@@ -1,5 +1,6 @@
 from mindcraft_py.task_coordinator import (
     AVAILABLE,
+    COMPLETED,
     LOCKED,
     CentralTaskCoordinator,
 )
@@ -55,6 +56,23 @@ def test_acquire_task_prefers_priority_then_id():
     assert acquired["id"] == "task-c"
     assert acquired["state"] == LOCKED
     assert acquired["lock_metadata"]["requester_id"] == "agent-a"
+
+
+def test_acquire_task_skips_tasks_with_unfinished_dependencies():
+    coordinator = CentralTaskCoordinator()
+    coordinator.register_task({"id": "parent", "payload": "p"})
+    coordinator.register_task({"id": "child", "payload": "c", "depends_on": ["parent"]})
+
+    acquired = coordinator.acquire_task("agent-a")
+
+    assert acquired["id"] == "parent"
+
+    parent = coordinator._tasks["parent"]
+    parent.state = COMPLETED
+
+    acquired_after = coordinator.acquire_task("agent-b")
+
+    assert acquired_after["id"] == "child"
 
 
 def test_expire_locks_releases_only_stale_tasks_and_records_timeout_history(

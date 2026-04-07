@@ -2,6 +2,7 @@ import pytest
 
 from mindcraft_py.task_coordinator import (
     AVAILABLE,
+    COMPLETED,
     LOCKED,
     CentralTaskCoordinator,
     ConflictError,
@@ -13,20 +14,22 @@ from mindcraft_py.task_coordinator import (
 def test_acquire_task_locks_best_matching_task():
     coordinator = CentralTaskCoordinator(
         [
-            TaskEntity("task-2", "b"),
-            TaskEntity("task-1", "a"),
+            TaskEntity("task-2", "b", state=COMPLETED),
+            TaskEntity("task-1", "a", depends_on=["task-2"]),
         ]
     )
 
     task = coordinator.acquire_task("agent-a")
 
-    assert task["id"] == "task-2"
+    assert task["id"] == "task-1"
     assert task["state"] == LOCKED
     assert task["lock_metadata"]["requester_id"] == "agent-a"
 
 
 def test_acquire_task_raises_conflict_when_no_match():
-    coordinator = CentralTaskCoordinator([])
+    coordinator = CentralTaskCoordinator(
+        [TaskEntity("task-1", "a", depends_on=["missing"])]
+    )
 
     with pytest.raises(ConflictError):
         coordinator.acquire_task("agent-a")

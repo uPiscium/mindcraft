@@ -16,6 +16,7 @@ class TaskEntity:
     id: str
     payload: str
     state: str = AVAILABLE
+    depends_on: list[str] = field(default_factory=list)
     lock_metadata: dict[str, Any] | None = None
     history: list[dict[str, Any]] = field(default_factory=list)
     priority: int = 0
@@ -63,7 +64,9 @@ class CentralTaskCoordinator:
     def acquire_task(self, requester_id: str) -> dict[str, Any]:
         with self._lock:
             eligible = [
-                task for task in self._tasks.values() if task.state == AVAILABLE
+                task
+                for task in self._tasks.values()
+                if task.state == AVAILABLE and self._dependencies_complete(task)
             ]
             if not eligible:
                 raise ConflictError("No available task matches the request.")
@@ -152,6 +155,7 @@ class CentralTaskCoordinator:
 
         payload = str(data.get("payload", ""))
         state = str(data.get("state", AVAILABLE))
+        depends_on = [str(dep) for dep in data.get("depends_on", [])]
         lock_metadata = data.get("lock_metadata")
         history = list(data.get("history", []))
         priority_value = data.get("priority")
@@ -161,16 +165,25 @@ class CentralTaskCoordinator:
             id=task_id,
             payload=payload,
             state=state,
+            depends_on=depends_on,
             lock_metadata=lock_metadata,
             history=history,
             priority=priority,
         )
+
+    def _dependencies_complete(self, task: TaskEntity) -> bool:
+        for dependency_id in task.depends_on:
+            dependency = self._tasks.get(dependency_id)
+            if dependency is None or dependency.state != COMPLETED:
+                return False
+        return True
 
     def _serialize_task(self, task: TaskEntity) -> dict[str, Any]:
         return {
             "id": task.id,
             "state": task.state,
             "payload": task.payload,
+            "depends_on": list(task.depends_on),
             "lock_metadata": task.lock_metadata,
             "history": list(task.history),
             "priority": task.priority,
