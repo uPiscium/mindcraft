@@ -1,11 +1,4 @@
-import sys
-
-from .runner import run_from_cli_args
-
-
-def main():
-    run_from_cli_args(sys.argv[1:])
-
+from .cli import main
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

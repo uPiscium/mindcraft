@@ -2,7 +2,7 @@
 name = "mindcraft"
 version = "0.1.0"
 description = "Python runtime for mindcraft"
-readme = "README_PYTHON.md"
+readme = "README.py.md"
 requires-python = ">=3.11"
 dependencies = [
     "boto3==1.37.11",
@@ -10,8 +10,12 @@ dependencies = [
     "pandas==2.2.3",
     "prettytable==3.16.0",
     "python-socketio[client]>=5.13.0,<6",
+    "requests>=2.31.0",
     "tqdm==4.62.3",
 ]
+
+[project.scripts]
+mindcraft-py = "mindcraft_py.cli:main"
 
 [dependency-groups]
 dev = [

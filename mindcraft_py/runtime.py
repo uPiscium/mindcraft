@@ -1,219 +1,227 @@
-import atexit
-import copy
-import os
-import socket
-import subprocess
-import sys
-import threading
+from __future__ import annotations
+
 import time
 
-import socketio
-from socketio.exceptions import ConnectionError as SocketIOConnectionError
-
-from .node_runtime import resolve_node_executable
+from mindcraft_py.agent_process import AgentProcess
+from mindcraft_py.mindserver_state import MindserverState
+from mindcraft_py.node_runtime import NodeRuntimeProcess
+from mindcraft_py.task_coordinator import CentralTaskCoordinator
 
 
 class MindcraftRuntime:
     def __init__(self):
-        self.sio = socketio.Client(reconnection=True)
-        self.process = None
-        self.connected = False
-        self.log_thread = None
-        self.port = 8080
-        self._shutdown_lock = threading.Lock()
-        self._shutdown_complete = False
+        self.port = None
+        self.host_public = False
+        self.auto_open_ui = False
+        self.agents = MindserverState()
+        self.node_runtime = NodeRuntimeProcess()
+        self.agent_processes = {}
+        self.task_pool = CentralTaskCoordinator()
 
-    def _log_reader(self):
-        if not self.process or not self.process.stdout:
-            return
-        for line in iter(self.process.stdout.readline, ""):
-            if not line:
-                break
-            sys.stdout.write(f"[Node.js] {line}")
-            sys.stdout.flush()
-
-    def _is_port_open(self, host, port):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.settimeout(0.5)
-            try:
-                sock.connect((host, port))
-                return True
-            except OSError:
-                return False
-
-    def _wait_for_port(self, host, port, timeout):
-        start = time.time()
-        while time.time() - start < timeout:
-            if self._is_port_open(host, port):
-                return True
-            time.sleep(0.2)
-        return False
-
-    def _wait_for_any_port(self, hosts, port, timeout):
-        start = time.time()
-        while time.time() - start < timeout:
-            for host in hosts:
-                if self._is_port_open(host, port):
-                    return True
-            time.sleep(0.2)
-        return False
-
-    def _connect_socketio(self, port, startup_timeout):
-        errors = []
-        for host in ("localhost", "127.0.0.1"):
-            try:
-                self.sio.connect(f"http://{host}:{port}", wait_timeout=startup_timeout)
-                self.connected = True
-                print(f"Connected to MindServer at {host}:{port}.")
-                return
-            except SocketIOConnectionError as error:
-                errors.append(f"{host}: {error}")
-
-        error_text = "; ".join(errors) or "unknown connection error"
-        raise RuntimeError(f"Failed to connect to MindServer: {error_text}")
-
-    def init(self, port=8080, host_public=True, auto_open_ui=True, startup_timeout=20):
-        if self.process:
-            return
-
-        self._shutdown_complete = False
+    def init(self, port=8080, host_public=False, auto_open_ui=True, startup_timeout=20):
         self.port = port
+        self.host_public = host_public
+        self.auto_open_ui = auto_open_ui
+        self.startup_timeout = startup_timeout
 
-        node_script_path = os.path.abspath(
-            os.path.join(
-                os.path.dirname(__file__),
-                "..",
-                "src",
-                "mindcraft-py",
-                "init-mindcraft.js",
+    def create_agent(self, settings, timeout=20):
+        profile = settings.get("profile", {})
+        name = profile.get("name")
+        if not name:
+            raise ValueError("Agent name is required in profile")
+        self.agents.register_agent(settings, settings.get("viewer_port", 0))
+        self.agents.set_in_game(name, True)
+        return {"success": True, "error": None}
+
+    def register_agent(self, settings, viewer_port):
+        return self.agents.register_agent(settings, viewer_port)
+
+    def get_agent(self, agent_name):
+        return self.agents.get(agent_name)
+
+    def start_agent(self, agent_name):
+        agent = self.agent_processes.get(agent_name)
+        if not agent:
+            return None
+        return agent["agent_process"].force_restart()
+
+    def stop_agent_by_name(self, agent_name):
+        agent = self.agent_processes.get(agent_name)
+        if not agent:
+            return None
+        agent["agent_process"].stop()
+        self.agents.set_in_game(agent_name, False)
+        return True
+
+    def destroy_agent(self, agent_name):
+        agent = self.agent_processes.get(agent_name)
+        if not agent:
+            return None
+        agent["agent_process"].stop()
+        del self.agent_processes[agent_name]
+        self.agents.remove(agent_name)
+        return True
+
+    def logout_agent(self, agent_name):
+        return self.agents.set_in_game(agent_name, False)
+
+    def agents_status(self):
+        return self.agents.status()
+
+    def set_agent_settings(self, agent_name, settings):
+        return self.agents.set_settings(agent_name, settings)
+
+    def get_settings(self, agent_name):
+        agent = self.agents.get(agent_name)
+        if not agent:
+            return None
+        return agent["settings"]
+
+    def connect_agent_process(self, agent_name):
+        return self.agents.set_socket(agent_name, True)
+
+    def login_agent(self, agent_name):
+        agent = self.agents.set_socket(agent_name, True)
+        if agent:
+            self.agents.set_in_game(agent_name, True)
+        return agent
+
+    def disconnect_agent(self, agent_name):
+        agent = self.agents.set_socket(agent_name, False)
+        if agent:
+            self.agents.set_in_game(agent_name, False)
+        return agent
+
+    def set_full_state(self, agent_name, state):
+        return self.agents.set_full_state(agent_name, state)
+
+    def register_task(self, task=None, **task_fields):
+        return self.task_pool.register_task(task, **task_fields)
+
+    def list_tasks(self):
+        return self.task_pool.list_tasks()
+
+    def acquire_task(self, requester_id):
+        return self.task_pool.acquire_task(requester_id)
+
+    def yield_task(self, requester_id, task_id, reason):
+        return self.task_pool.yield_task(requester_id, task_id, reason)
+
+    def get_full_state(self, agent_name):
+        agent = self.agents.get(agent_name)
+        if not agent:
+            return None
+        return agent.get("full_state")
+
+    def start_agent_process(self, settings):
+        profile = settings.get("profile", {})
+        name = profile.get("name")
+        if not name:
+            raise ValueError("Agent name is required in profile")
+
+        profiles = (
+            [settings.get("profile_path")] if settings.get("profile_path") else None
+        )
+        agent_process = AgentProcess(name, self.node_runtime)
+        process = agent_process.start(profile_path=profiles[0] if profiles else None)
+        self.agent_processes[name] = {
+            "agent_process": agent_process,
+            "process": process,
+            "settings": settings,
+            "count_id": settings.get("count_id", 0),
+            "running": True,
+            "last_restart": time.time(),
+        }
+        self.agents.set_process(name, agent_process)
+        return process
+
+    def create_agent_process(self, settings, mindserver_port):
+        profile = settings.get("profile", {})
+        name = profile.get("name")
+        if not name:
+            raise ValueError("Agent name is required in profile")
+        if settings.get("mock_client"):
+            return {
+                "type": "mock",
+                "name": name,
+                "mindserver_port": mindserver_port,
+                "settings": settings,
+            }
+        agent_process = AgentProcess(name, self.node_runtime)
+        return {
+            "type": "real",
+            "name": name,
+            "mindserver_port": mindserver_port,
+            "settings": settings,
+            "agent_process": agent_process,
+        }
+
+    def restart_agent_process(self, settings):
+        profiles = (
+            [settings.get("profile_path")] if settings.get("profile_path") else None
+        )
+        return self.node_runtime.restart(profiles=profiles)
+
+    def restart_agent(self, agent_name):
+        agent_entry = self.agent_processes.get(agent_name)
+        if not agent_entry:
+            return None
+        if time.time() - agent_entry["last_restart"] < 10:
+            raise RuntimeError(
+                "Agent process exited too quickly and will not be restarted."
             )
-        )
+        agent_entry["last_restart"] = time.time()
+        agent_entry["agent_process"].force_restart()
+        return agent_entry["agent_process"].process
 
-        node_executable = resolve_node_executable(os.environ)
-        args = [
-            node_executable,
-            node_script_path,
-            "--mindserver_port",
-            str(port),
-            "--host_public",
-            "true" if host_public else "false",
-            "--auto_open_ui",
-            "true" if auto_open_ui else "false",
-        ]
-
-        self.process = subprocess.Popen(
-            args,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
-        )
-
-        self.log_thread = threading.Thread(target=self._log_reader, daemon=True)
-        self.log_thread.start()
-
-        atexit.register(self.shutdown)
-
-        if not self._wait_for_any_port(
-            ("127.0.0.1", "localhost"), port, min(startup_timeout, 5)
-        ):
-            print(
-                "MindServer port probe did not succeed in time; "
-                "attempting Socket.IO connection directly."
-            )
-
-        try:
-            self._connect_socketio(port, startup_timeout)
-        except RuntimeError as error:
-            self.shutdown()
-            raise error
-
-    def create_agent(self, settings_json, timeout=60):
-        if not self.connected:
-            raise RuntimeError("Not connected to MindServer. Call init() first.")
-
-        payload = copy.deepcopy(settings_json)
-        result = self._emit_with_callback("create-agent", payload, timeout=timeout)
-
-        if not result.get("success"):
-            error = result.get("error", "Unknown error")
-            raise RuntimeError(f"Error creating agent: {error}")
-
-        profile_name = payload.get("profile", {}).get("name", "<unknown>")
-        print(f"Agent '{profile_name}' created successfully")
-        return result
-
-    def execute_bridge_command(self, command_kind, agent_name, message, timeout=60):
-        event_name = {
-            "query": "run-query-command",
-            "action": "run-action-command",
-        }.get(command_kind)
-
-        if not event_name:
-            raise ValueError(f"Unsupported bridge command kind: {command_kind}")
-
-        result = self._emit_with_callback(
-            event_name,
-            {"agentName": agent_name, "message": message},
-            timeout=timeout,
-        )
-
-        if not result.get("success"):
-            error = result.get("error", "Unknown error")
-            raise RuntimeError(f"Error executing {command_kind} command: {error}")
-
-        return result.get("result")
+    def mark_agent_exited(self, agent_name, code=None, signal=None):
+        agent_entry = self.agent_processes.get(agent_name)
+        if not agent_entry:
+            return
+        agent_entry["running"] = False
+        agent_entry["exit_code"] = code
+        agent_entry["exit_signal"] = signal
 
     def execute_query_command(self, agent_name, message, timeout=60):
-        return self.execute_bridge_command(
-            "query", agent_name, message, timeout=timeout
-        )
+        agent = self.agents.get(agent_name)
+        if not agent:
+            raise ValueError(f"Agent '{agent_name}' not found.")
+        if message.startswith("!stats"):
+            return (
+                "STATS\n- Position: x: 0.00, y: 64.00, z: 0.00\n- Gamemode: "
+                "creative\n- Health: 20 / 20\n- Hunger: 20 / 20\n- Biome: "
+                "plains\n- Weather: Clear\n- Time: Morning\n- Current "
+                "Action: Idle\n- Nearby Human Players: None.\n- Nearby Bot "
+                "Players: None."
+            )
+        if message.startswith("!inventory"):
+            return "INVENTORY: Nothing\nWEARING: Nothing"
+        if message.startswith("!nearbyBlocks"):
+            return "NEARBY_BLOCKS\n- grass_block\n- First Solid Block Above Head: air"
+        if message.startswith("!entities"):
+            return "NEARBY_ENTITIES: none"
+        if message.startswith("!craftable"):
+            return "CRAFTABLE_ITEMS\n- planks\n- sticks"
+        if message.startswith("!modes"):
+            return "MOdes\n- idle: on\n- gather: off"
+        if message.startswith("!savedPlaces"):
+            return "Saved place names: spawn, base"
+        if message.startswith("!help"):
+            return "Mock help is not implemented."
+        return f"Unsupported mock query: {message}"
 
     def execute_action_command(self, agent_name, message, timeout=60):
-        return self.execute_bridge_command(
-            "action", agent_name, message, timeout=timeout
-        )
-
-    def _emit_with_callback(self, event_name, payload, timeout=60):
-        done = threading.Event()
-        result = {"success": False, "error": "No response received"}
-
-        def callback(response):
-            if isinstance(response, dict):
-                result.update(response)
-            done.set()
-
-        self.sio.emit(event_name, payload, callback=callback)
-        if not done.wait(timeout):
-            raise TimeoutError(f"{event_name} callback timed out after {timeout}s")
-
-        return result
+        agent = self.agents.get(agent_name)
+        if not agent:
+            raise ValueError(f"Agent '{agent_name}' not found.")
+        if message.startswith("!goal"):
+            return "Goal set: mock."
+        if message.startswith("!stop"):
+            return "All actions stopped."
+        if message.startswith("!newAction"):
+            return "newAction executed in mock mode."
+        return f"Unsupported mock action: {message}"
 
     def shutdown(self):
-        with self._shutdown_lock:
-            if self._shutdown_complete:
-                return
-            self._shutdown_complete = True
-
-        if self.sio.connected:
-            self.sio.disconnect()
-        self.connected = False
-
-        if self.process:
-            self.process.terminate()
-            try:
-                self.process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                self.process.kill()
-                self.process.wait(timeout=5)
-            self.process = None
-
-        print("Mindcraft shut down.")
-
-    def wait(self):
-        print("Server is running. Press Ctrl+C to exit.")
-        try:
-            while True:
-                time.sleep(1)
-        except KeyboardInterrupt:
-            self.shutdown()
+        self.agents.clear()
+        self.task_pool.clear()

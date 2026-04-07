@@ -1,0 +1,11 @@
+name = "Clara"
+
+[model]
+api = "ollama"
+model = "Sweaterdog/Andy-4:q8_0"
+url = "https://ollama-melchior.arc.upiscium.dev"
+
+[embedding]
+api = "ollama"
+model = "embeddinggemma:latest"
+url = "https://ollama-melchior.arc.upiscium.dev"

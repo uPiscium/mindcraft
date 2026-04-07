@@ -1,66 +1,57 @@
+from __future__ import annotations
+
+import os
+import shutil
 import subprocess
-
-SUPPORTED_NODE_MAJORS = {18, 20, 22}
-
-
-def _parse_node_major(version_output):
-    version = version_output.strip()
-    if version.startswith("v"):
-        version = version[1:]
-    major_text = version.split(".", 1)[0]
-    return int(major_text)
+from pathlib import Path
 
 
-def resolve_node_executable(env=None):
-    if env is None:
-        env = None
+class NodeRuntimeProcess:
+    def __init__(self, repo_root=None, node_binary=None):
+        self.repo_root = Path(repo_root or Path(__file__).resolve().parents[1])
+        self.node_binary = node_binary or shutil.which("node")
+        self.process = None
 
-    candidates = []
-    explicit_node = None
-    if env:
-        explicit_node = env.get("MINDCRAFT_NODE_BIN")
-    if explicit_node:
-        candidates.append(explicit_node)
-
-    candidates.extend(["node22", "node20", "node18", "node"])
-
-    best_unsupported = None
-    for candidate in candidates:
-        try:
-            completed = subprocess.run(
-                [candidate, "--version"],
-                capture_output=True,
-                text=True,
-                check=False,
-                env=env,
+    def build_command(self, profiles=None, task_path=None, task_id=None):
+        if self.node_binary is None:
+            raise RuntimeError(
+                "Node.js is required to launch the current Mindcraft runtime."
             )
-        except FileNotFoundError:
-            continue
 
-        if completed.returncode != 0:
-            continue
+        command = [self.node_binary, str(self.repo_root / "main.js")]
+        if profiles:
+            command.extend(["--profiles", *profiles])
+        if task_path:
+            command.extend(["--task_path", task_path])
+        if task_id:
+            command.extend(["--task_id", task_id])
+        return command
 
-        raw_version = completed.stdout.strip() or completed.stderr.strip()
-        try:
-            major = _parse_node_major(raw_version)
-        except (TypeError, ValueError):
-            continue
-
-        if major in SUPPORTED_NODE_MAJORS:
-            return candidate
-
-        if best_unsupported is None:
-            best_unsupported = (candidate, raw_version)
-
-    if best_unsupported:
-        node_bin, node_version = best_unsupported
-        raise RuntimeError(
-            "Unsupported Node.js version detected for Mindcraft Python bridge "
-            f"({node_bin} -> {node_version}). Use Node.js 18 or 20 LTS, or set "
-            "MINDCRAFT_NODE_BIN to a compatible Node binary."
+    def start(self, profiles=None, task_path=None, task_id=None):
+        command = self.build_command(profiles, task_path, task_id)
+        self.process = subprocess.Popen(
+            command,
+            cwd=self.repo_root,
+            env=os.environ.copy(),
         )
+        return self.process
 
-    raise RuntimeError(
-        "Node.js executable not found. Install Node.js 18 or 20 LTS, or set "
-        "MINDCRAFT_NODE_BIN to your Node binary path."
-    )
+    def wait(self):
+        if self.process is None:
+            return 0
+        return self.process.wait()
+
+    def stop(self, timeout=10):
+        if self.process is None:
+            return
+        if self.process.poll() is None:
+            self.process.terminate()
+            try:
+                self.process.wait(timeout=timeout)
+            except subprocess.TimeoutExpired:
+                self.process.kill()
+                self.process.wait(timeout=timeout)
+
+    def restart(self, profiles=None, task_path=None, task_id=None, timeout=10):
+        self.stop(timeout=timeout)
+        return self.start(profiles=profiles, task_path=task_path, task_id=task_id)

@@ -2,11 +2,10 @@ name = "Andy"
 
 [model]
 api = "ollama"
-# model = "Sweaterdog/Andy-4:q8_0"
-model = "qwen3.5:27b"
+model = "Sweaterdog/Andy-4:q8_0"
 url = "https://ollama-melchior.arc.upiscium.dev"
 
 [embedding]
 api = "ollama"
 model = "embeddinggemma:latest"
-url = "https://ollama.arc.upiscium.dev"
+url = "https://ollama-melchior.arc.upiscium.dev"

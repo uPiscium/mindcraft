@@ -1,12 +1,10 @@
 import { createMindServer, registerAgent, numStateListeners } from './mindserver.js';
-import { AgentProcess } from '../process/agent_process.js';
-import { MockAgentClient } from '../process/mock_agent_client.js';
-import { getServer } from './mcserver.js';
+import { createAgentProcess } from '../process/create_agent_process.js';
 import open from 'open';
+import { getAgentProcess as getAgentProcessRecord, getAgents, removeAgent, setAgentInGame, setAgentProcess } from './agent_registry.js';
 
 let mindserver;
 let connected = false;
-let agent_processes = {};
 let agent_count = 0;
 let mindserver_port = 8080;
 
@@ -45,26 +43,9 @@ export async function createAgent(settings) {
     let init_message = settings.init_message || null;
 
     try {
-        try {
-            if (!settings.mock_client) {
-                const server = await getServer(settings.host, settings.port, settings.minecraft_version);
-                settings.host = server.host;
-                settings.port = server.port;
-                settings.minecraft_version = server.version;
-            }
-        } catch (error) {
-            console.warn(`Error getting server:`, error);
-            if (settings.minecraft_version === "auto") {
-                settings.minecraft_version = null;
-            }
-            console.warn(`Attempting to connect anyway...`);
-        }
-
-        const agentProcess = settings.mock_client
-            ? new MockAgentClient(agent_name, mindserver_port, settings)
-            : new AgentProcess(agent_name, mindserver_port);
-        await agentProcess.start(load_memory, init_message, agentIndex);
-        agent_processes[settings.profile.name] = agentProcess;
+        const agentProcess = createAgentProcess(agent_name, mindserver_port, settings);
+        await agentProcess.start(load_memory, init_message, agentIndex, settings.profile_path);
+        setAgentProcess(agent_name, agentProcess);
     } catch (error) {
         console.error(`Error creating agent ${agent_name}:`, error);
         destroyAgent(agent_name);
@@ -80,12 +61,13 @@ export async function createAgent(settings) {
 }
 
 export function getAgentProcess(agentName) {
-    return agent_processes[agentName];
+    return getAgentProcessRecord(agentName);
 }
 
 export function startAgent(agentName) {
-    if (agent_processes[agentName]) {
-        agent_processes[agentName].forceRestart();
+    const process = getAgentProcess(agentName);
+    if (process) {
+        process.forceRestart();
     }
     else {
         console.error(`Cannot start agent ${agentName}; not found`);
@@ -93,22 +75,28 @@ export function startAgent(agentName) {
 }
 
 export function stopAgent(agentName) {
-    if (agent_processes[agentName]) {
-        agent_processes[agentName].stop();
+    const process = getAgentProcess(agentName);
+    if (process) {
+        process.stop();
     }
+    setAgentInGame(agentName, false);
 }
 
 export function destroyAgent(agentName) {
-    if (agent_processes[agentName]) {
-        agent_processes[agentName].stop();
-        delete agent_processes[agentName];
+    const process = getAgentProcess(agentName);
+    if (process) {
+        process.stop();
     }
+    removeAgent(agentName);
 }
 
 export function shutdown() {
     console.log('Shutting down');
-    for (let agentName in agent_processes) {
-        agent_processes[agentName].stop();
+    for (const agentName of Object.keys(getAgents())) {
+        const process = getAgentProcessRecord(agentName);
+        if (process) {
+            process.stop();
+        }
     }
     setTimeout(() => {
         process.exit(0);

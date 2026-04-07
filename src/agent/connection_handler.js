@@ -1,43 +1,12 @@
 import { sendOutputToServer } from './mindserver_proxy.js';
+import { readFileSync } from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// Definitions of error types, keywords, and full human-readable messages.
-const ERROR_DEFINITIONS = {
-    'name_conflict': {
-        keywords: ['name_taken', 'duplicate_login', 'already connected', 'already logged in', 'username is already'],
-        msg: 'Name Conflict: The name is already in use or you are already logged in.',
-        isFatal: true
-    },
-    'access_denied': {
-        keywords: ['whitelist', 'not white-listed', 'banned', 'suspended', 'verify'],
-        msg: 'Access Denied: You are not whitelisted or banned.',
-        isFatal: true
-    },
-    'server_full': {
-        keywords: ['server is full', 'full server'],
-        msg: 'Connection Failed: The server is full.',
-        isFatal: false
-    },
-    'version_mismatch': {
-        keywords: ['outdated', 'version', 'client'],
-        msg: 'Version Mismatch: Client and server versions do not match.',
-        isFatal: true
-    },
-    'maintenance': {
-        keywords: ['maintenance', 'updating', 'closed', 'restarting'],
-        msg: 'Connection Failed: Server is under maintenance or restarting.',
-        isFatal: false
-    },
-    'network_error': {
-        keywords: ['timeout', 'timed out', 'connection lost', 'reset', 'refused', 'keepalive'],
-        msg: 'Network Error: Connection timed out or was lost.',
-        isFatal: false
-    },
-    'behavior': {
-        keywords: ['flying', 'spam', 'speed'],
-        msg: 'Kicked: Removed from server due to flying, spamming, or invalid movement.',
-        isFatal: true
-    }
-};
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ERROR_DEFINITIONS = JSON.parse(
+    readFileSync(path.join(__dirname, '..', '..', 'mindcraft_py', 'connection_errors.json'), 'utf8')
+);
 
 // Helper to log messages to console (once) and MindServer.
 export const log = (agentName, msg) => {

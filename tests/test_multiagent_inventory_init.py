@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 
 from mindcraft_py.profiles import load_profile
@@ -8,6 +7,8 @@ TASK_PATH = PROJECT_ROOT / "tasks" / "multiagent_crafting_tasks.json"
 
 
 def test_multiagent_shears_task_has_inventory_initialization():
+    import json
+
     task = json.loads(TASK_PATH.read_text(encoding="utf-8"))[
         "multiagent_techtree_1_shears"
     ]
