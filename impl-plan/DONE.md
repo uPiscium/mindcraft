@@ -34,4 +34,4 @@
 
 - 検証
   - `just check` 通過
-  - `pytest` 全 76 件通過
+  - `pytest` 全 77 件通過

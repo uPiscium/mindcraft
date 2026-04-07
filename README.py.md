@@ -89,6 +89,7 @@ Python 側でプロセスを制御したい場合は `mindcraft_py.runtime.Mindc
 
 - `mindcraft_py.task_coordinator` に、中央タスク管理機構の `AcquireTask` / `YieldTask` 相当を追加しました。
 - タスクは `depends_on` を持ち、先行タスクの完了を前提に取得されます。
+- `MindcraftRuntime` からは `register_task` / `list_tasks` / `acquire_task` / `yield_task` を直接扱えます。
 - `mindcraft_py.environment` に、空間情報の要約とコンテキストベースのインベントリ抽出を追加しました。
 - `mindcraft_py.llm_gateway` に、JSON Schema 付きの生成要求と再試行付きパース処理を追加しました。
 - これらは `mindcraft_py` のトップレベルからも再エクスポートされています。
