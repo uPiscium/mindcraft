@@ -16,6 +16,7 @@ class MindcraftRuntime:
         self.agents = MindserverState()
         self.node_runtime = NodeRuntimeProcess()
         self.agent_processes = {}
+        self.agent_tasks = {}
         self.task_pool = CentralTaskCoordinator()
 
     def init(self, port=8080, host_public=False, auto_open_ui=True, startup_timeout=20):
@@ -31,6 +32,7 @@ class MindcraftRuntime:
             raise ValueError("Agent name is required in profile")
         self.agents.register_agent(settings, settings.get("viewer_port", 0))
         self.agents.set_in_game(name, True)
+        self._seed_tasks_from_settings(settings)
         return {"success": True, "error": None}
 
     def register_agent(self, settings, viewer_port):
@@ -49,6 +51,7 @@ class MindcraftRuntime:
         agent = self.agent_processes.get(agent_name)
         if not agent:
             return None
+        self._yield_agent_task(agent_name, "agent stopped")
         agent["agent_process"].stop()
         self.agents.set_in_game(agent_name, False)
         return True
@@ -57,8 +60,10 @@ class MindcraftRuntime:
         agent = self.agent_processes.get(agent_name)
         if not agent:
             return None
+        self._yield_agent_task(agent_name, "agent destroyed")
         agent["agent_process"].stop()
         del self.agent_processes[agent_name]
+        self.agent_tasks.pop(agent_name, None)
         self.agents.remove(agent_name)
         return True
 
@@ -98,14 +103,37 @@ class MindcraftRuntime:
     def register_task(self, task=None, **task_fields):
         return self.task_pool.register_task(task, **task_fields)
 
+    def register_tasks(self, tasks):
+        return [self.register_task(task) for task in tasks or []]
+
     def list_tasks(self):
         return self.task_pool.list_tasks()
 
     def acquire_task(self, requester_id):
         return self.task_pool.acquire_task(requester_id)
 
+    def acquire_task_for_agent(self, agent_name):
+        agent = self.agent_processes.get(agent_name)
+        if not agent:
+            raise ValueError(f"Agent '{agent_name}' not found.")
+        task = self.acquire_task(agent_name)
+        self.agent_tasks[agent_name] = task
+        agent["current_task"] = task
+        return task
+
     def yield_task(self, requester_id, task_id, reason):
         return self.task_pool.yield_task(requester_id, task_id, reason)
+
+    def yield_task_for_agent(self, agent_name, reason):
+        agent_task = self.agent_tasks.get(agent_name)
+        if not agent_task:
+            return None
+        result = self.yield_task(agent_name, agent_task["id"], reason)
+        self.agent_tasks.pop(agent_name, None)
+        agent = self.agent_processes.get(agent_name)
+        if agent is not None:
+            agent.pop("current_task", None)
+        return result
 
     def get_full_state(self, agent_name):
         agent = self.agents.get(agent_name)
@@ -124,6 +152,7 @@ class MindcraftRuntime:
         )
         agent_process = AgentProcess(name, self.node_runtime)
         process = agent_process.start(profile_path=profiles[0] if profiles else None)
+        self._seed_tasks_from_settings(settings)
         self.agent_processes[name] = {
             "agent_process": agent_process,
             "process": process,
@@ -178,6 +207,7 @@ class MindcraftRuntime:
         agent_entry = self.agent_processes.get(agent_name)
         if not agent_entry:
             return
+        self._yield_agent_task(agent_name, "agent exited")
         agent_entry["running"] = False
         agent_entry["exit_code"] = code
         agent_entry["exit_signal"] = signal
@@ -223,5 +253,20 @@ class MindcraftRuntime:
         return f"Unsupported mock action: {message}"
 
     def shutdown(self):
+        for agent_name in list(self.agent_tasks):
+            self._yield_agent_task(agent_name, "runtime shutdown")
         self.agents.clear()
         self.task_pool.clear()
+
+    def _seed_tasks_from_settings(self, settings):
+        tasks = settings.get("tasks")
+        if tasks is None:
+            tasks = settings.get("profile", {}).get("tasks")
+        if tasks:
+            self.register_tasks(tasks)
+
+    def _yield_agent_task(self, agent_name, reason):
+        try:
+            return self.yield_task_for_agent(agent_name, reason)
+        except Exception:
+            return None
