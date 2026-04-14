@@ -154,6 +154,8 @@ python -m pytest tests/test_task_coordinator_unit.py tests/test_runtime_task_poo
 python scripts/task_pool_demo.py
 ```
 
+デモでは `acquire_task()` / `yield_task()` / `complete_task()` を順に試せます。
+
 エージェント起動確認まで含めるなら:
 
 ```bash

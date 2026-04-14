@@ -9,7 +9,6 @@ repo_root = Path(__file__).resolve().parents[1]
 if str(repo_root) not in sys.path:
     sys.path.insert(0, str(repo_root))
 
-from mindcraft_py.task_coordinator import COMPLETED
 from mindcraft_py.runtime import MindcraftRuntime
 
 
@@ -37,7 +36,14 @@ def main() -> None:
     yielded = runtime.yield_task("Andy", acquired["id"], "finished demo")
     print(yielded)
 
-    runtime.task_pool._tasks["task-1"].state = COMPLETED
+    reacquired = runtime.acquire_task("Andy")
+    print("\nReacquire task-1 to complete it:")
+    print(reacquired)
+
+    completed = runtime.complete_task(
+        "Andy", reacquired["id"], "prerequisite completed"
+    )
+    print(completed)
 
     print("\nAcquire next task after dependency completion:")
     next_task = runtime.acquire_task("Andy")

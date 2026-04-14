@@ -105,6 +105,29 @@ class CentralTaskCoordinator:
             task.lock_metadata = None
             return {"success": True, "task": self._serialize_task(task)}
 
+    def complete_task(
+        self, requester_id: str, task_id: str, reason: str
+    ) -> dict[str, Any]:
+        with self._lock:
+            task = self._tasks.get(task_id)
+            if not task:
+                raise TaskNotFoundError(f"Task '{task_id}' not found.")
+            if task.state != LOCKED:
+                raise TaskOwnershipError(f"Task '{task_id}' is not locked.")
+            if (task.lock_metadata or {}).get("requester_id") != requester_id:
+                raise TaskOwnershipError("Task is locked by a different requester.")
+
+            task.history.append(
+                {
+                    "reason": reason,
+                    "requester_id": requester_id,
+                    "recorded_at": time(),
+                }
+            )
+            task.state = COMPLETED
+            task.lock_metadata = None
+            return {"success": True, "task": self._serialize_task(task)}
+
     def expire_locks(self, max_lock_age_seconds: float) -> int:
         with self._lock:
             now = time()
@@ -192,3 +215,4 @@ class CentralTaskCoordinator:
 
 AcquireTask = CentralTaskCoordinator.acquire_task
 YieldTask = CentralTaskCoordinator.yield_task
+CompleteTask = CentralTaskCoordinator.complete_task

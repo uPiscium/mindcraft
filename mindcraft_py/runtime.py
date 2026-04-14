@@ -124,11 +124,25 @@ class MindcraftRuntime:
     def yield_task(self, requester_id, task_id, reason):
         return self.task_pool.yield_task(requester_id, task_id, reason)
 
+    def complete_task(self, requester_id, task_id, reason):
+        return self.task_pool.complete_task(requester_id, task_id, reason)
+
     def yield_task_for_agent(self, agent_name, reason):
         agent_task = self.agent_tasks.get(agent_name)
         if not agent_task:
             return None
         result = self.yield_task(agent_name, agent_task["id"], reason)
+        self.agent_tasks.pop(agent_name, None)
+        agent = self.agent_processes.get(agent_name)
+        if agent is not None:
+            agent.pop("current_task", None)
+        return result
+
+    def complete_task_for_agent(self, agent_name, reason):
+        agent_task = self.agent_tasks.get(agent_name)
+        if not agent_task:
+            return None
+        result = self.complete_task(agent_name, agent_task["id"], reason)
         self.agent_tasks.pop(agent_name, None)
         agent = self.agent_processes.get(agent_name)
         if agent is not None:
