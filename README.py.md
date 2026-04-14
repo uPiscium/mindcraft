@@ -148,6 +148,12 @@ python -m pytest tests/test_task_coordinator.py tests/test_environment_helpers.p
 python -m pytest tests/test_task_coordinator_unit.py tests/test_runtime_task_pool_unit.py
 ```
 
+タスクプールの最小デモは次です。
+
+```bash
+python scripts/task_pool_demo.py
+```
+
 エージェント起動確認まで含めるなら:
 
 ```bash
