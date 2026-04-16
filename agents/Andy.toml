@@ -2,10 +2,13 @@ name = "Andy"
 
 [model]
 api = "ollama"
-model = "Sweaterdog/Andy-4:q8_0"
-url = "https://ollama-melchior.arc.upiscium.dev"
+model = "gemma4:26b"
+url = "https://ollama-balthazar.arc.upiscium.dev"
 
 [embedding]
 api = "ollama"
 model = "embeddinggemma:latest"
-url = "https://ollama-melchior.arc.upiscium.dev"
+url = "https://ollama-balthazar.arc.upiscium.dev"
+
+# Optional task pool file for dependency-aware task loading.
+# task_pool_file = "./tasks/task_pool_demo.toml"

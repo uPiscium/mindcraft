@@ -26,6 +26,10 @@ def build_parser():
         "--task_id",
         help="Task identifier to run from the task file.",
     )
+    parser.add_argument(
+        "--task_pool_file",
+        help="Path to a TOML task pool file to preload.",
+    )
     return parser
 
 
@@ -38,6 +42,8 @@ def build_command(args, repo_root=None):
         command.extend(["--task_path", args.task_path])
     if args.task_id:
         command.extend(["--task_id", args.task_id])
+    if getattr(args, "task_pool_file", None):
+        command.extend(["--task_pool_file", args.task_pool_file])
     return command, repo_root
 
 

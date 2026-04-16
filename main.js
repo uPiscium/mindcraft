@@ -19,6 +19,10 @@ function parseArguments() {
             type: 'string',
             describe: 'Task ID to execute'
         })
+        .option('task_pool_file', {
+            type: 'string',
+            describe: 'Path to a TOML task pool file to preload'
+        })
         .help()
         .alias('help', 'h')
         .parse();
@@ -36,6 +40,9 @@ if (args.task_path) {
     else {
         throw new Error('task_id is required when task_path is provided');
     }
+}
+if (args.task_pool_file) {
+    settings.task_pool_file = args.task_pool_file;
 }
 
 // these environment variables override certain settings

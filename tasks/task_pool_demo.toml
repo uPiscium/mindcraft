@@ -1,0 +1,10 @@
+[[tasks]]
+id = "gather_oak_logs"
+payload = "Collect at least four oak logs"
+priority = 1
+
+[[tasks]]
+id = "craft_planks"
+payload = "Craft planks after logs are ready"
+depends_on = ["gather_oak_logs"]
+priority = 2

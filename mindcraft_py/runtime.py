@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import time
+import tomllib
+from pathlib import Path
 
 from mindcraft_py.agent_process import AgentProcess
 from mindcraft_py.mindserver_state import MindserverState
@@ -105,6 +107,22 @@ class MindcraftRuntime:
 
     def register_tasks(self, tasks):
         return [self.register_task(task) for task in tasks or []]
+
+    def load_task_pool_file(self, task_file_path):
+        path = Path(task_file_path)
+        if not path.exists():
+            raise FileNotFoundError(f"Task pool file not found: {path}")
+
+        with path.open("rb") as handle:
+            data = tomllib.load(handle)
+
+        tasks = data.get("tasks")
+        if not isinstance(tasks, list):
+            raise ValueError("Task pool file must define a 'tasks' array.")
+
+        registered = self.register_tasks(tasks)
+        self._validate_task_dependencies()
+        return registered
 
     def list_tasks(self):
         return self.task_pool.list_tasks()
@@ -273,6 +291,11 @@ class MindcraftRuntime:
         self.task_pool.clear()
 
     def _seed_tasks_from_settings(self, settings):
+        task_pool_file = settings.get("task_pool_file")
+        if not task_pool_file:
+            task_pool_file = settings.get("profile", {}).get("task_pool_file")
+        if task_pool_file:
+            self.load_task_pool_file(task_pool_file)
         tasks = settings.get("tasks")
         if tasks is None:
             tasks = settings.get("profile", {}).get("tasks")
@@ -284,3 +307,17 @@ class MindcraftRuntime:
             return self.yield_task_for_agent(agent_name, reason)
         except Exception:
             return None
+
+    def _validate_task_dependencies(self):
+        task_ids = set(self.task_pool._tasks)
+        for task in self.task_pool._tasks.values():
+            missing_dependencies = [
+                dependency_id
+                for dependency_id in task.depends_on
+                if dependency_id not in task_ids
+            ]
+            if missing_dependencies:
+                raise ValueError(
+                    f"Task '{task.id}' depends on missing task(s): "
+                    f"{', '.join(missing_dependencies)}"
+                )

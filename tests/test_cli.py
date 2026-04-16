@@ -14,6 +14,7 @@ def test_build_command_passes_profiles_and_task_args():
         profiles=["./agents/Andy.toml"],
         task_path="./tasks/basic/single_agent.json",
         task_id="gather_oak_logs",
+        task_pool_file=None,
     )
 
     command, repo_root = build_command(args, repo_root=Path("/repo"))

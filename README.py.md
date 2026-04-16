@@ -156,6 +156,20 @@ python scripts/task_pool_demo.py
 
 デモでは `acquire_task()` / `yield_task()` / `complete_task()` を順に試せます。
 
+TOML 形式の task pool file を読み込む場合は `task_pool_file` を profile や settings に指定します。デモは `tasks/task_pool_demo.toml` を読み込みます。
+
+例:
+
+```toml
+task_pool_file = "./tasks/task_pool_demo.toml"
+```
+
+CLI から渡す場合は次を使えます。
+
+```bash
+python -m mindcraft_py --profiles ./agents/Andy.toml --task_pool_file ./tasks/task_pool_demo.toml
+```
+
 エージェント起動確認まで含めるなら:
 
 ```bash

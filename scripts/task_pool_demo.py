@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-# ruff: noqa: E402, I001
-
 import sys
 from pathlib import Path
 
@@ -9,20 +7,17 @@ repo_root = Path(__file__).resolve().parents[1]
 if str(repo_root) not in sys.path:
     sys.path.insert(0, str(repo_root))
 
+# ruff: noqa: E402
 from mindcraft_py.runtime import MindcraftRuntime
+
+
+def task_pool_file_path() -> Path:
+    return repo_root / "tasks" / "task_pool_demo.toml"
 
 
 def main() -> None:
     runtime = MindcraftRuntime()
-
-    runtime.register_task({"id": "task-1", "payload": "gather oak logs"})
-    runtime.register_task(
-        {
-            "id": "task-2",
-            "payload": "craft planks",
-            "depends_on": ["task-1"],
-        }
-    )
+    runtime.load_task_pool_file(task_pool_file_path())
 
     print("Initial tasks:")
     for task in runtime.list_tasks():
