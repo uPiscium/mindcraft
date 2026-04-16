@@ -15,6 +15,7 @@ import { addBrowserViewer } from './vision/browser_viewer.js';
 import { serverProxy, sendOutputToServer } from './mindserver_proxy.js';
 import settings from './settings.js';
 import { Task } from './tasks/tasks.js';
+import { TaskPool } from './tasks/task_pool.js';
 import { speak } from './speak.js';
 import { log, validateNameFormat, handleDisconnection } from './connection_handler.js';
 
@@ -44,6 +45,8 @@ export class Agent {
         this.npc = new NPCContoller(this);
         this.memory_bank = new MemoryBank();
         this.self_prompter = new SelfPrompter(this);
+        this.task_pool = new TaskPool(settings.task_pool || []);
+        this._activeTaskAction = null;
         convoManager.initAgent(this);
         await this.prompter.initExamples();
 
@@ -131,6 +134,15 @@ export class Agent {
                     // set the goal without initializing the rest of the task
                     if (settings.task) {
                         this.task.setAgentGoal();
+                    }
+                }
+
+                if (this.task_pool.hasAvailableTask()) {
+                    const acquiredTask = this.task_pool.acquireNextTask();
+                    if (acquiredTask) {
+                        this.task.current_task = acquiredTask;
+                        this.self_prompter.setTaskContext(acquiredTask);
+                        console.log(`${this.name} acquired task:`, JSON.stringify(acquiredTask));
                     }
                 }
 
@@ -520,7 +532,94 @@ export class Agent {
     async update(delta) {
         await this.bot.modes.update();
         this.self_prompter.update(delta);
+        await this._updateTaskPoolLifecycle();
         await this.checkTaskDone();
+    }
+
+    async _updateTaskPoolLifecycle() {
+        if (!this.task_pool) return;
+
+        if (!this.task_pool.getCurrentTask() && this.task_pool.hasAvailableTask() && this.isIdle()) {
+            const task = this.task_pool.acquireNextTask();
+            if (task) {
+                this.task = this.task || {};
+                this.task.current_task = task;
+                this.self_prompter.setTaskContext(task);
+                console.log(`${this.name} acquired task:`, JSON.stringify(task));
+            }
+            return;
+        }
+
+        const currentTask = this.task_pool.getCurrentTask();
+        if (!currentTask) return;
+
+        if (this.bot.interrupt_code) {
+            const yielded = this.task_pool.yieldCurrentTask('task interrupted');
+            if (yielded) {
+                this.task.current_task = null;
+                this.self_prompter.clearTaskContext();
+                console.log(`${this.name} yielded task:`, JSON.stringify(yielded));
+            }
+            return;
+        }
+
+        if (this.isIdle() && currentTask.state === 'LOCKED' && this.actions.currentActionLabel === '') {
+            return;
+        }
+    }
+
+    async onActionStarted(actionLabel) {
+        this._activeTaskAction = actionLabel;
+    }
+
+    async onActionSucceeded(actionLabel, result) {
+        if (!this.task_pool || !this.task_pool.getCurrentTask()) return;
+        const completed = this.task_pool.completeCurrentTask(`${actionLabel} completed`);
+        if (completed) {
+            this.task.current_task = null;
+            this.self_prompter.clearTaskContext();
+            console.log(`${this.name} completed task:`, JSON.stringify(completed));
+            if (this.task_pool.hasAvailableTask()) {
+                const nextTask = this.task_pool.acquireNextTask();
+                if (nextTask) {
+                    this.task.current_task = nextTask;
+                    this.self_prompter.setTaskContext(nextTask);
+                    console.log(`${this.name} acquired task:`, JSON.stringify(nextTask));
+                }
+            }
+        }
+        this._activeTaskAction = null;
+    }
+
+    async onActionFailed(actionLabel, result) {
+        if (!this.task_pool || !this.task_pool.getCurrentTask()) return;
+        const yielded = this.task_pool.yieldCurrentTask(result?.message || `${actionLabel} failed`);
+        if (yielded) {
+            this.task.current_task = null;
+            this.self_prompter.clearTaskContext();
+            console.log(`${this.name} yielded task:`, JSON.stringify(yielded));
+        }
+        this._activeTaskAction = null;
+    }
+
+    async _runTaskAction(taskFn, actionLabel, timeout = 10) {
+        const result = await taskFn();
+        if (result && result.success === false) {
+            const yielded = this.task_pool.yieldCurrentTask(result.message || 'task failed');
+            if (yielded) {
+                this.task.current_task = null;
+                this.self_prompter.clearTaskContext();
+                console.log(`${this.name} yielded task:`, JSON.stringify(yielded));
+            }
+        } else if (this.task_pool.getCurrentTask()) {
+            const completed = this.task_pool.completeCurrentTask(`${actionLabel} completed`);
+            if (completed) {
+                this.task.current_task = null;
+                this.self_prompter.clearTaskContext();
+                console.log(`${this.name} completed task:`, JSON.stringify(completed));
+            }
+        }
+        return result;
     }
 
     isIdle() {

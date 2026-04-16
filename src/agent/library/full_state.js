@@ -55,7 +55,8 @@ export function getFullState(agent) {
         },
         action: {
             current: agent.isIdle() ? 'Idle' : agent.actions.currentActionLabel,
-            isIdle: agent.isIdle()
+            isIdle: agent.isIdle(),
+            currentTask: agent.task?.current_task || null,
         },
         surroundings: {
             below,

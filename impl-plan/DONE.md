@@ -21,6 +21,25 @@
   - `register_task` / `list_tasks` / `acquire_task` / `yield_task` を公開
   - `shutdown()` でタスクプールをクリア
 
+- `src/agent/tasks/task_pool.js`
+  - エージェント側の task pool 実体を実装
+
+- `src/agent/self_prompter.js`
+  - current task を prompt に注入できるようにした
+
+- `src/agent/action_manager.js`
+  - action 成功/失敗フックを通じて task lifecycle を連携
+
+- `src/agent/agent.js`
+  - 起動時の acquire と idle 時の自動取得を接続
+  - 成功時 complete / 失敗・中断時 yield を接続
+
+- `src/agent/library/full_state.js`
+  - `currentTask` を state に表示
+
+- `main.js`
+  - `task_pool_file` を CLI から受け取って読み込むようにした
+
 - `mindcraft_py/__init__.py`
   - 上記モジュールの主要シンボルを再エクスポート
 
@@ -31,7 +50,10 @@
   - `tests/test_llm_gateway.py`
   - `tests/test_task_coordinator_unit.py`
   - `tests/test_runtime_task_pool_unit.py`
+  - `tests/test_runtime_task_pool_integration.py`
+  - `tests/test_runtime_task_file_loader.py`
+  - `tests/test_task_pool_loader.js`
 
 - 検証
   - `just check` 通過
-  - `pytest` 全 77 件通過
+  - `pytest` 全 40 件通過

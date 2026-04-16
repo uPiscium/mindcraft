@@ -71,6 +71,11 @@ if (process.env.LOG_ALL) {
     settings.log_all_prompts = process.env.LOG_ALL;
 }
 
+if (settings.task_pool_file) {
+    const taskPoolData = toml.parse(readFileSync(settings.task_pool_file, 'utf8'));
+    settings.task_pool = Array.isArray(taskPoolData.tasks) ? taskPoolData.tasks : [];
+}
+
 Mindcraft.init(true, settings.mindserver_port, settings.auto_open_ui);
 
 for (let profile of settings.profiles) {
