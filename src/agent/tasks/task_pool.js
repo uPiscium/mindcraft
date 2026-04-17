@@ -125,6 +125,13 @@ export class TaskPool {
         return this.tasks.map((task) => this._serialize(task));
     }
 
+    setTasks(tasks = []) {
+        this.tasks = tasks.map((task, index) => this._normalizeTask(task, index));
+        this.currentTaskId = null;
+        this.currentTaskDriving = false;
+        return this.getAllTasks();
+    }
+
     _serialize(task) {
         return {
             ...task,

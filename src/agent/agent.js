@@ -45,7 +45,7 @@ export class Agent {
         this.npc = new NPCContoller(this);
         this.memory_bank = new MemoryBank();
         this.self_prompter = new SelfPrompter(this);
-        this.task_pool = new TaskPool(settings.task_pool || []);
+        this.task_pool = new TaskPool([]);
         this._activeTaskAction = null;
         convoManager.initAgent(this);
         await this.prompter.initExamples();
@@ -144,6 +144,10 @@ export class Agent {
                         this.self_prompter.setTaskContext(acquiredTask);
                         console.log(`${this.name} acquired task:`, JSON.stringify(acquiredTask));
                     }
+                }
+
+                if (Array.isArray(settings.task_pool) && settings.task_pool.length > 0) {
+                    this.task_pool.setTasks(settings.task_pool);
                 }
 
                 await new Promise((resolve) => setTimeout(resolve, 10000));

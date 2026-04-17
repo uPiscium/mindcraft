@@ -19,10 +19,6 @@ function parseArguments() {
             type: 'string',
             describe: 'Task ID to execute'
         })
-        .option('task_pool_file', {
-            type: 'string',
-            describe: 'Path to a TOML task pool file to preload'
-        })
         .help()
         .alias('help', 'h')
         .parse();
@@ -41,10 +37,6 @@ if (args.task_path) {
         throw new Error('task_id is required when task_path is provided');
     }
 }
-if (args.task_pool_file) {
-    settings.task_pool_file = args.task_pool_file;
-}
-
 // these environment variables override certain settings
 if (process.env.MINECRAFT_PORT) {
     settings.port = process.env.MINECRAFT_PORT;
@@ -71,9 +63,8 @@ if (process.env.LOG_ALL) {
     settings.log_all_prompts = process.env.LOG_ALL;
 }
 
-if (settings.task_pool_file) {
-    const taskPoolData = toml.parse(readFileSync(settings.task_pool_file, 'utf8'));
-    settings.task_pool = Array.isArray(taskPoolData.tasks) ? taskPoolData.tasks : [];
+if (process.env.TASK_POOL_JSON) {
+    settings.task_pool = JSON.parse(process.env.TASK_POOL_JSON);
 }
 
 Mindcraft.init(true, settings.mindserver_port, settings.auto_open_ui);
