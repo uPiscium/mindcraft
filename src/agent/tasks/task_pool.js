@@ -2,6 +2,7 @@ export class TaskPool {
     constructor(tasks = []) {
         this.tasks = tasks.map((task, index) => this._normalizeTask(task, index));
         this.currentTaskId = null;
+        this.currentTaskDriving = false;
     }
 
     _normalizeTask(task, index) {
@@ -45,6 +46,7 @@ export class TaskPool {
         const task = this._availableTasks()[0] || null;
         if (!task) {
             this.currentTaskId = null;
+            this.currentTaskDriving = false;
             return null;
         }
 
@@ -54,6 +56,7 @@ export class TaskPool {
             locked_at: Date.now(),
         };
         this.currentTaskId = task.id;
+        this.currentTaskDriving = true;
         return this._serialize(task);
     }
 
@@ -68,6 +71,7 @@ export class TaskPool {
         task.state = 'COMPLETED';
         task.lock_metadata = null;
         this.currentTaskId = null;
+        this.currentTaskDriving = false;
         return this._serialize(task);
     }
 
@@ -82,7 +86,12 @@ export class TaskPool {
         task.state = 'AVAILABLE';
         task.lock_metadata = null;
         this.currentTaskId = null;
+        this.currentTaskDriving = false;
         return this._serialize(task);
+    }
+
+    isDrivingTask() {
+        return this.currentTaskDriving && this.currentTaskId !== null;
     }
 
     getCurrentTask() {

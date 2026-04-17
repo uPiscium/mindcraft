@@ -35,6 +35,10 @@ export class SelfPrompter {
         }
     }
 
+    getTaskContextPrompt() {
+        return this._buildPrompt('');
+    }
+
     clearTaskContext() {
         this.task_context = null;
         if (this.state !== STOPPED) {
@@ -47,7 +51,7 @@ export class SelfPrompter {
         if (!prompt) {
             if (!this.prompt)
                 return 'No prompt specified. Ignoring request.';
-            prompt = this.prompt;
+            prompt = this.base_prompt || this.prompt;
         }
         this.base_prompt = prompt;
         this.state = ACTIVE;
@@ -72,6 +76,7 @@ export class SelfPrompter {
             state = STOPPED;
         this.state = state;
         this.prompt = prompt;
+        this.base_prompt = prompt;
         if (state !== STOPPED && !prompt)
             throw new Error('No prompt loaded when self-prompting is active');
         if (state === ACTIVE) {

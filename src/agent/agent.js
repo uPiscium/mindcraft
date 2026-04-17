@@ -554,7 +554,7 @@ export class Agent {
         if (!currentTask) return;
 
         if (this.bot.interrupt_code) {
-            const yielded = this.task_pool.yieldCurrentTask('task interrupted');
+            const yielded = this.task_pool.isDrivingTask() ? this.task_pool.yieldCurrentTask('task interrupted') : null;
             if (yielded) {
                 this.task.current_task = null;
                 this.self_prompter.clearTaskContext();
@@ -573,7 +573,7 @@ export class Agent {
     }
 
     async onActionSucceeded(actionLabel, result) {
-        if (!this.task_pool || !this.task_pool.getCurrentTask()) return;
+        if (!this.task_pool || !this.task_pool.isDrivingTask()) return;
         const completed = this.task_pool.completeCurrentTask(`${actionLabel} completed`);
         if (completed) {
             this.task.current_task = null;
@@ -592,7 +592,7 @@ export class Agent {
     }
 
     async onActionFailed(actionLabel, result) {
-        if (!this.task_pool || !this.task_pool.getCurrentTask()) return;
+        if (!this.task_pool || !this.task_pool.isDrivingTask()) return;
         const yielded = this.task_pool.yieldCurrentTask(result?.message || `${actionLabel} failed`);
         if (yielded) {
             this.task.current_task = null;

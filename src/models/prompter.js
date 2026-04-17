@@ -221,8 +221,15 @@ export class Prompter {
         if (prompt.includes('$CONVO'))
             prompt = prompt.replaceAll('$CONVO', 'Recent conversation:\n' + stringifyTurns(messages));
         if (prompt.includes('$SELF_PROMPT')) {
-            // if active or paused, show the current goal
-            let self_prompt = !this.agent.self_prompter.isStopped() ? `YOUR CURRENT ASSIGNED GOAL: "${this.agent.self_prompter.prompt}"\n` : '';
+            let self_prompt = '';
+            if (this.agent.self_prompter.task_context) {
+                const taskPrompt = this.agent.self_prompter.getTaskContextPrompt().trim();
+                if (taskPrompt.length > 0) {
+                    self_prompt = `YOUR CURRENT ASSIGNED GOAL: "${taskPrompt}"\n`;
+                }
+            } else if (!this.agent.self_prompter.isStopped()) {
+                self_prompt = `YOUR CURRENT ASSIGNED GOAL: "${this.agent.self_prompter.prompt}"\n`;
+            }
             prompt = prompt.replaceAll('$SELF_PROMPT', self_prompt);
         }
         if (prompt.includes('$LAST_GOALS')) {
