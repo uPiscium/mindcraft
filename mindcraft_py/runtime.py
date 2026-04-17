@@ -108,6 +108,10 @@ class MindcraftRuntime:
     def register_tasks(self, tasks):
         return [self.register_task(task) for task in tasks or []]
 
+    def replace_task_pool(self, tasks):
+        self.task_pool.clear()
+        return self.register_tasks(tasks)
+
     def load_task_pool_file(self, task_file_path):
         path = Path(task_file_path)
         if not path.exists():

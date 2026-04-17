@@ -8,8 +8,42 @@ export class SelfPrompter {
         this.loop_active = false;
         this.interrupt = false;
         this.prompt = '';
+        this.base_prompt = '';
+        this.task_context = null;
         this.idle_time = 0;
         this.cooldown = 2000;
+    }
+
+    _buildPrompt(prompt = null) {
+        const basePrompt = prompt ?? this.base_prompt;
+        if (!this.task_context) {
+            return basePrompt;
+        }
+
+        const taskText = this.task_context.goal ?? this.task_context.payload ?? '';
+        if (!taskText) {
+            return basePrompt;
+        }
+
+        return `${basePrompt}\n\nCURRENT TASK:\n${taskText}`;
+    }
+
+    setTaskContext(task) {
+        this.task_context = task || null;
+        if (this.state !== STOPPED) {
+            this.prompt = this._buildPrompt();
+        }
+    }
+
+    getTaskContextPrompt() {
+        return this._buildPrompt('');
+    }
+
+    clearTaskContext() {
+        this.task_context = null;
+        if (this.state !== STOPPED) {
+            this.prompt = this._buildPrompt();
+        }
     }
 
     start(prompt) {
@@ -17,10 +51,11 @@ export class SelfPrompter {
         if (!prompt) {
             if (!this.prompt)
                 return 'No prompt specified. Ignoring request.';
-            prompt = this.prompt;
+            prompt = this.base_prompt || this.prompt;
         }
+        this.base_prompt = prompt;
         this.state = ACTIVE;
-        this.prompt = prompt;
+        this.prompt = this._buildPrompt(prompt);
         this.startLoop();
     }
 
@@ -41,6 +76,7 @@ export class SelfPrompter {
             state = STOPPED;
         this.state = state;
         this.prompt = prompt;
+        this.base_prompt = prompt;
         if (state !== STOPPED && !prompt)
             throw new Error('No prompt loaded when self-prompting is active');
         if (state === ACTIVE) {

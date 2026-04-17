@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import shutil
 import socket
 import subprocess
 from pathlib import Path
+
+from mindcraft_py.runtime import MindcraftRuntime
 
 
 def build_parser():
@@ -95,6 +98,10 @@ def main(argv=None):
     command[0] = node_path
 
     env = os.environ.copy()
+    if args.task_pool_file:
+        runtime = MindcraftRuntime()
+        task_pool = runtime.load_task_pool_file(args.task_pool_file)
+        env["TASK_POOL_JSON"] = json.dumps(task_pool)
     mindserver_port = choose_mindserver_port(
         env.get("MINDSERVER_PORT"), host="127.0.0.1"
     )

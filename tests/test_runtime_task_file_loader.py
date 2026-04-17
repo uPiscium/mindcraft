@@ -83,3 +83,25 @@ payload = "Collect logs"
     )
 
     assert runtime.list_tasks()[0]["id"] == "gather_oak_logs"
+
+
+def test_create_agent_keeps_existing_task_pool_when_tasks_are_seeded(tmp_path):
+    task_file = tmp_path / "task_pool.toml"
+    task_file.write_text(
+        """
+[[tasks]]
+id = "gather_oak_logs"
+payload = "Collect logs"
+""",
+        encoding="utf-8",
+    )
+
+    runtime = MindcraftRuntime()
+    runtime.create_agent(
+        {
+            "profile": {"name": "Andy", "task_pool_file": str(task_file)},
+            "viewer_port": 0,
+        }
+    )
+
+    assert runtime.list_tasks()[0]["id"] == "gather_oak_logs"

@@ -102,6 +102,9 @@ export class ActionManager {
             }
 
             // start the action
+            if (typeof this.agent.onActionStarted === 'function') {
+                await this.agent.onActionStarted(actionLabel);
+            }
             await actionFn();
 
             // mark action as finished + cleanup
@@ -119,6 +122,10 @@ export class ActionManager {
             // if not interrupted and not generating, emit idle event
             if (!interrupted) {
                 this.agent.bot.emit('idle');
+            }
+
+            if (typeof this.agent.onActionSucceeded === 'function') {
+                await this.agent.onActionSucceeded(actionLabel, { message: output, interrupted, timedout });
             }
 
             // return action status report
@@ -144,6 +151,9 @@ export class ActionManager {
             this.agent.clearBotLogs();
             if (!interrupted) {
                 this.agent.bot.emit('idle');
+            }
+            if (typeof this.agent.onActionFailed === 'function') {
+                await this.agent.onActionFailed(actionLabel, { message, interrupted, timedout: false, error: err });
             }
             return { success: false, message, interrupted, timedout: false };
         }
