@@ -134,6 +134,9 @@ class MindcraftRuntime:
     def acquire_task(self, requester_id):
         return self.task_pool.acquire_task(requester_id)
 
+    def acquire_task_by_id(self, requester_id, task_id):
+        return self.task_pool.acquire_task_by_id(requester_id, task_id)
+
     def acquire_task_for_agent(self, agent_name):
         agent = self.agent_processes.get(agent_name)
         if not agent:
@@ -148,6 +151,26 @@ class MindcraftRuntime:
 
     def complete_task(self, requester_id, task_id, reason):
         return self.task_pool.complete_task(requester_id, task_id, reason)
+
+    def get_ready_task_order(self):
+        ordered = []
+        completed = set()
+        pending = {task["id"]: task for task in self.list_tasks()}
+
+        while pending:
+            progress = False
+            for task_id in list(pending):
+                task = pending[task_id]
+                dependencies = task.get("depends_on", [])
+                if all(dependency_id in completed for dependency_id in dependencies):
+                    ordered.append(task_id)
+                    completed.add(task_id)
+                    pending.pop(task_id)
+                    progress = True
+            if not progress:
+                break
+
+        return ordered
 
     def yield_task_for_agent(self, agent_name, reason):
         agent_task = self.agent_tasks.get(agent_name)

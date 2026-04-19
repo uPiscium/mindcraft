@@ -154,6 +154,14 @@ python -m pytest tests/test_task_coordinator_unit.py tests/test_runtime_task_poo
 python scripts/task_pool_demo.py
 ```
 
+依存解消順に task をたどる BFS デモは次です。
+
+```bash
+python scripts/task_pool_bfs_demo.py
+```
+
+Python の BFS ランナーを直接使う場合は `mindcraft_py.task_runner.run_dependency_bfs` を参照してください。
+
 デモでは `acquire_task()` / `yield_task()` / `complete_task()` を順に試せます。
 
 TOML 形式の task pool file を読み込む場合は `task_pool_file` を profile や settings に指定します。デモは `tasks/task_pool_demo.toml` を読み込みます。

@@ -82,6 +82,23 @@ class CentralTaskCoordinator:
             }
             return self._serialize_task(task)
 
+    def acquire_task_by_id(self, requester_id: str, task_id: str) -> dict[str, Any]:
+        with self._lock:
+            task = self._tasks.get(task_id)
+            if not task:
+                raise TaskNotFoundError(f"Task '{task_id}' not found.")
+            if task.state != AVAILABLE:
+                raise ConflictError(f"Task '{task_id}' is not available.")
+            if not self._dependencies_complete(task):
+                raise ConflictError(f"Task '{task_id}' dependencies are not complete.")
+
+            task.state = LOCKED
+            task.lock_metadata = {
+                "requester_id": requester_id,
+                "locked_at": time(),
+            }
+            return self._serialize_task(task)
+
     def yield_task(
         self, requester_id: str, task_id: str, reason: str
     ) -> dict[str, Any]:
