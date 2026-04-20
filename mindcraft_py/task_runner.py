@@ -4,6 +4,7 @@ from collections.abc import Callable
 from typing import Any
 
 from mindcraft_py.runtime import MindcraftRuntime
+from mindcraft_py.task_execution_controller import TaskExecutionController
 
 TaskExecutor = Callable[[dict[str, Any]], Any]
 
@@ -77,6 +78,7 @@ def run_dependency_bfs(
     completed: list[str] = []
     failed: list[str] = []
     executor = executor or default_task_executor
+    controller = TaskExecutionController(runtime)
 
     while ready:
         task_id = ready.pop(0)
@@ -96,6 +98,10 @@ def run_dependency_bfs(
 
         success, reason = _normalize_executor_result(task, result)
         if success:
+            if task.get("payload") or task.get("goal"):
+                controller.executor.execute_step(
+                    {"type": "natural_language", "content": reason}
+                )
             runtime.complete_task(requester_id, task_id, reason)
             completed.append(task_id)
             executed.append(task_id)
