@@ -44,6 +44,15 @@
   - 割当済み task を実行する controller を実装
   - task の acquire / plan / execute / complete / yield を扱う
 
+- `mindcraft_py/task_slot.py`
+  - エージェント単位の task slot を実装
+
+- `mindcraft_py/task_slot_orchestrator.py`
+  - slot が埋まっている間だけ controller を起動する orchestrator を実装
+
+- `mindcraft_py/runtime.py`
+  - agent ごとの task slot 参照を追加
+
 - `mindcraft_py/__init__.py`
   - 上記モジュールの主要シンボルを再エクスポート
 
@@ -59,6 +68,7 @@
   - `tests/test_task_pool_loader.js`
   - `tests/test_task_execution_controller.py`
   - `tests/test_task_runner.py`
+  - `tests/test_task_slot_orchestration.py`
 
 - 検証
-  - `pytest` 全 47 件通過
+  - `pytest` 全 50 件通過

@@ -80,3 +80,36 @@ class TaskExecutionController:
         reason = f"task {task_id} completed"
         self.runtime.complete_task(requester_id, task_id, reason)
         return TaskExecutionResult(success=True, reason=reason, steps=executed_steps)
+
+    def run_assigned(self, requester_id: str) -> TaskExecutionResult | None:
+        slot = self.runtime.get_task_slot(requester_id)
+        if slot.is_empty() or slot.task is None:
+            return None
+
+        task = slot.task
+        plan = self.executor.plan(task)
+        executed_steps: list[dict[str, Any]] = []
+
+        while plan.has_next():
+            step = plan.next_step()
+            if step is None:
+                break
+            step_result = self.executor.execute_step(step)
+            executed_steps.append({"step": step, "result": step_result})
+            if not step_result.get("success", False):
+                self.runtime.yield_task(
+                    requester_id,
+                    str(task["id"]),
+                    step_result.get("reason", "task failed"),
+                )
+                self.runtime.clear_task_slot(requester_id)
+                return TaskExecutionResult(
+                    success=False,
+                    reason=str(step_result.get("reason", "task failed")),
+                    steps=executed_steps,
+                )
+
+        reason = f"task {task['id']} completed"
+        self.runtime.complete_task(requester_id, str(task["id"]), reason)
+        self.runtime.clear_task_slot(requester_id)
+        return TaskExecutionResult(success=True, reason=reason, steps=executed_steps)

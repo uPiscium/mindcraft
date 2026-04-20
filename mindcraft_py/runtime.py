@@ -8,6 +8,7 @@ from mindcraft_py.agent_process import AgentProcess
 from mindcraft_py.mindserver_state import MindserverState
 from mindcraft_py.node_runtime import NodeRuntimeProcess
 from mindcraft_py.task_coordinator import CentralTaskCoordinator
+from mindcraft_py.task_slot import EMPTY, TaskSlotManager
 
 
 class MindcraftRuntime:
@@ -20,6 +21,7 @@ class MindcraftRuntime:
         self.agent_processes = {}
         self.agent_tasks = {}
         self.task_pool = CentralTaskCoordinator()
+        self.task_slots = TaskSlotManager()
 
     def init(self, port=8080, host_public=False, auto_open_ui=True, startup_timeout=20):
         self.port = port
@@ -144,6 +146,7 @@ class MindcraftRuntime:
         task = self.acquire_task(agent_name)
         self.agent_tasks[agent_name] = task
         agent["current_task"] = task
+        self.task_slots.assign(agent_name, task)
         return task
 
     def yield_task(self, requester_id, task_id, reason):
@@ -181,6 +184,8 @@ class MindcraftRuntime:
         agent = self.agent_processes.get(agent_name)
         if agent is not None:
             agent.pop("current_task", None)
+        self.task_slots.fail(agent_name, reason)
+        self.task_slots.clear(agent_name)
         return result
 
     def complete_task_for_agent(self, agent_name, reason):
@@ -192,7 +197,15 @@ class MindcraftRuntime:
         agent = self.agent_processes.get(agent_name)
         if agent is not None:
             agent.pop("current_task", None)
+        self.task_slots.complete(agent_name, reason)
+        self.task_slots.clear(agent_name)
         return result
+
+    def get_task_slot(self, agent_name):
+        return self.task_slots.get_slot(agent_name)
+
+    def clear_task_slot(self, agent_name):
+        self.task_slots.clear(agent_name)
 
     def get_full_state(self, agent_name):
         agent = self.agents.get(agent_name)
