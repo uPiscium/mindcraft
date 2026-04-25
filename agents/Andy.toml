@@ -3,7 +3,7 @@ name = "Andy"
 [model]
 api = "ollama"
 model = "gemma4:26b"
-url = "https://ollama-balthazar.arc.upiscium.dev"
+url = "https://ollama-caspar.arc.upiscium.dev"
 
 [embedding]
 api = "ollama"

@@ -1,0 +1,16 @@
+[[tasks]]
+id = "hard_reinforce_entry"
+payload = "Reinforce the main entry to the base"
+priority = 1
+
+[[tasks]]
+id = "hard_install_lighting"
+payload = "Install lighting around the base perimeter"
+depends_on = ["hard_reinforce_entry"]
+priority = 2
+
+[[tasks]]
+id = "hard_build_escape_route"
+payload = "Build a backup escape route from the base"
+depends_on = ["hard_install_lighting"]
+priority = 3

@@ -6,13 +6,14 @@ Accepted
 
 ## Context
 
-The system now has a dependency-aware task pool, a BFS runner, and a controller for executing assigned tasks. What was still missing was a stable place inside each agent to hold the currently assigned task while the execution controller runs.
+The system now has a dependency-aware task pool, a BFS runner, and a controller for executing assigned tasks. What was still missing was a stable place inside each agent to hold the currently assigned task while the execution controller runs, plus a way to auto-start prompting when a task is assigned.
 
 This missing layer is useful because it separates:
 
 - task selection from task execution
 - task execution from agent lifecycle management
 - immediate assignment from eventual self-directed task acquisition
+- slot assignment from self-prompt startup
 
 ## Decision
 
@@ -24,6 +25,7 @@ The chosen model is:
 - task slot stores the current task for an agent
 - task execution controller operates on the slot contents
 - the orchestrator decides whether the slot should be filled or executed
+- agent activation now starts self-prompting from the assigned task context
 
 The slot state is intentionally explicit: `EMPTY`, `ASSIGNED`, `RUNNING`, `COMPLETED`, `FAILED`.
 
@@ -35,6 +37,7 @@ The slot state is intentionally explicit: `EMPTY`, `ASSIGNED`, `RUNNING`, `COMPL
 - controller execution becomes guard-railed by slot state
 - stop / disconnect / shutdown can recover assigned work consistently
 - future self-directed task acquisition can reuse the same slot contract
+- task assignment now directly boots the self-prompt loop, so execution starts without a manual trigger
 
 ### Negative
 

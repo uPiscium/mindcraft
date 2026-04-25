@@ -1,0 +1,16 @@
+[[tasks]]
+id = "easy_find_food"
+payload = "Gather a basic food source"
+priority = 1
+
+[[tasks]]
+id = "easy_prepare_food"
+payload = "Prepare the food source for storage or use"
+depends_on = ["easy_find_food"]
+priority = 2
+
+[[tasks]]
+id = "easy_store_food"
+payload = "Store the food safely near the base"
+depends_on = ["easy_prepare_food"]
+priority = 3

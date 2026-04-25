@@ -4,6 +4,9 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { readFileSync } from 'fs';
 import toml from 'toml';
+import { installConsoleFormatting } from './src/utils/logging.js';
+
+installConsoleFormatting();
 
 function parseArguments() {
     return yargs(hideBin(process.argv))

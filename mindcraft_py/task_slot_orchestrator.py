@@ -15,7 +15,17 @@ class TaskOrchestrator:
     def tick(self, agent_name: str) -> dict[str, Any]:
         slot = self.runtime.get_task_slot(agent_name)
         if slot.is_empty():
-            return {"status": EMPTY, "task": None}
+            try:
+                task = self.runtime.acquire_task_for_agent(agent_name)
+            except Exception:
+                return {"status": EMPTY, "task": None}
+
+            if not task:
+                return {"status": EMPTY, "task": None}
+
+            slot = self.runtime.get_task_slot(agent_name)
+            slot.mark_running()
+            return self._run_slot(agent_name)
 
         if slot.state == RUNNING:
             return self._run_slot(agent_name)

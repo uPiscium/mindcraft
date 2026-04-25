@@ -384,6 +384,13 @@ export const actionsList = [
         }
     },
     {
+        name: '!endSubGoal',
+        description: 'Call when a subtask is finished but the overall goal should continue.',
+        perform: async function () {
+            return 'Subgoal completed.';
+        }
+    },
+    {
         name: '!showVillagerTrades',
         description: 'Show trades of a specified villager.',
         params: {'id': { type: 'int', description: 'The id number of the villager that you want to trade with.' }},

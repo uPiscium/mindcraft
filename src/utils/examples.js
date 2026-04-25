@@ -68,9 +68,8 @@ export class Examples {
     async createExampleMessage(turns) {
         let selected_examples = await this.getRelevant(turns);
 
-        console.log('selected examples:');
         for (let example of selected_examples) {
-            console.log('Example:', example[0].content)
+            console.log(example[0].content)
         }
 
         let msg = 'Examples of how to respond:\n';

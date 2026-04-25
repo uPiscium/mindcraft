@@ -1,0 +1,16 @@
+[[tasks]]
+id = "hard_prepare_mining"
+payload = "Prepare supplies for a deeper mining run"
+priority = 1
+
+[[tasks]]
+id = "hard_collect_iron"
+payload = "Mine enough iron for upgraded equipment"
+depends_on = ["hard_prepare_mining"]
+priority = 2
+
+[[tasks]]
+id = "hard_craft_upgrade"
+payload = "Craft the upgraded equipment from the gathered iron"
+depends_on = ["hard_collect_iron"]
+priority = 3

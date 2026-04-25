@@ -137,17 +137,16 @@ export class Agent {
                     }
                 }
 
+                if (Array.isArray(settings.task_pool) && settings.task_pool.length > 0) {
+                    this.task_pool.setTasks(settings.task_pool);
+                }
+
                 if (this.task_pool.hasAvailableTask()) {
                     const acquiredTask = this.task_pool.acquireNextTask();
                     if (acquiredTask) {
-                        this.task.current_task = acquiredTask;
-                        this.self_prompter.setTaskContext(acquiredTask);
+                        await this._activateTask(acquiredTask);
                         console.log(`${this.name} acquired task:`, JSON.stringify(acquiredTask));
                     }
-                }
-
-                if (Array.isArray(settings.task_pool) && settings.task_pool.length > 0) {
-                    this.task_pool.setTasks(settings.task_pool);
                 }
 
                 await new Promise((resolve) => setTimeout(resolve, 10000));
@@ -546,9 +545,7 @@ export class Agent {
         if (!this.task_pool.getCurrentTask() && this.task_pool.hasAvailableTask() && this.isIdle()) {
             const task = this.task_pool.acquireNextTask();
             if (task) {
-                this.task = this.task || {};
-                this.task.current_task = task;
-                this.self_prompter.setTaskContext(task);
+                await this._activateTask(task);
                 console.log(`${this.name} acquired task:`, JSON.stringify(task));
             }
             return;
@@ -586,8 +583,7 @@ export class Agent {
             if (this.task_pool.hasAvailableTask()) {
                 const nextTask = this.task_pool.acquireNextTask();
                 if (nextTask) {
-                    this.task.current_task = nextTask;
-                    this.self_prompter.setTaskContext(nextTask);
+                    await this._activateTask(nextTask);
                     console.log(`${this.name} acquired task:`, JSON.stringify(nextTask));
                 }
             }
@@ -624,6 +620,19 @@ export class Agent {
             }
         }
         return result;
+    }
+
+    async _activateTask(task) {
+        if (!task) return null;
+        this.task.current_task = task;
+        this.self_prompter.setTaskContext(task);
+        if (!this.self_prompter.isActive()) {
+            const taskPrompt = task.goal || task.payload || task.task_id || task.id;
+            if (taskPrompt) {
+                this.self_prompter.start(taskPrompt);
+            }
+        }
+        return task;
     }
 
     isIdle() {

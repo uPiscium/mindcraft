@@ -1,0 +1,16 @@
+[[tasks]]
+id = "easy_gather_logs"
+payload = "Collect at least four oak logs and stop when done"
+priority = 1
+
+[[tasks]]
+id = "easy_craft_planks"
+payload = "Craft oak planks from the collected logs"
+depends_on = ["easy_gather_logs"]
+priority = 2
+
+[[tasks]]
+id = "easy_craft_workbench"
+payload = "Craft a crafting table from the planks and finish"
+depends_on = ["easy_craft_planks"]
+priority = 3

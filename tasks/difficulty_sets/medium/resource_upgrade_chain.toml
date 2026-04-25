@@ -1,0 +1,16 @@
+[[tasks]]
+id = "medium_gather_stone"
+payload = "Collect enough stone to upgrade tools"
+priority = 1
+
+[[tasks]]
+id = "medium_craft_stone_tools"
+payload = "Craft stone tools after stone is collected"
+depends_on = ["medium_gather_stone"]
+priority = 2
+
+[[tasks]]
+id = "medium_prepare_iron_search"
+payload = "Use the upgraded tools to prepare for iron mining"
+depends_on = ["medium_craft_stone_tools"]
+priority = 3

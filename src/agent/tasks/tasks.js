@@ -336,6 +336,7 @@ export class Task {
             this.restrict_to_inventory = !!this.data.restrict_to_inventory;
             if (this.data.goal)
                 this.blocked_actions.push('!endGoal');
+            this.blocked_actions = this.blocked_actions.filter(action => action !== '!endSubGoal');
             if (this.conversation)
                 this.blocked_actions.push('!endConversation');
         }

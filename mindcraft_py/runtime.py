@@ -8,7 +8,7 @@ from mindcraft_py.agent_process import AgentProcess
 from mindcraft_py.mindserver_state import MindserverState
 from mindcraft_py.node_runtime import NodeRuntimeProcess
 from mindcraft_py.task_coordinator import CentralTaskCoordinator
-from mindcraft_py.task_slot import EMPTY, TaskSlotManager
+from mindcraft_py.task_slot import TaskSlotManager
 
 
 class MindcraftRuntime:

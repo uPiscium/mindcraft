@@ -26,6 +26,7 @@
 
 - `src/agent/self_prompter.js`
   - current task を prompt に注入できるようにした
+  - task context 付きで自動起動できるようにした
 
 - `src/agent/action_manager.js`
   - action 成功/失敗フックを通じて task lifecycle を連携
@@ -33,6 +34,7 @@
 - `src/agent/agent.js`
   - 起動時の acquire と idle 時の自動取得を接続
   - 成功時 complete / 失敗・中断時 yield を接続
+  - task 完了後に次 task を自動取得して自動起動するようにした
 
 - `src/agent/library/full_state.js`
   - `currentTask` を state に表示
@@ -68,7 +70,10 @@
   - `tests/test_task_pool_loader.js`
   - `tests/test_task_execution_controller.py`
   - `tests/test_task_runner.py`
-  - `tests/test_task_slot_orchestration.py`
+- `tests/test_task_slot_orchestration.py`
+  - `tests/test_self_prompter.js`
+  - `tests/test_agent_task_handoff.js`
 
 - 検証
-  - `pytest` 全 50 件通過
+  - `just test` 通過
+  - `just check` 通過

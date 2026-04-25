@@ -1,0 +1,16 @@
+[[tasks]]
+id = "medium_mark_start"
+payload = "Mark the starting point for an exploration route"
+priority = 1
+
+[[tasks]]
+id = "medium_explore_outward"
+payload = "Explore outward and identify a useful landmark"
+depends_on = ["medium_mark_start"]
+priority = 2
+
+[[tasks]]
+id = "medium_return_safe"
+payload = "Return safely and report the route back to base"
+depends_on = ["medium_explore_outward"]
+priority = 3

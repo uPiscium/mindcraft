@@ -1,0 +1,16 @@
+[[tasks]]
+id = "hard_find_shelter"
+payload = "Find or build a safe shelter before nightfall"
+priority = 1
+
+[[tasks]]
+id = "hard_secure_food"
+payload = "Secure enough food to survive the next cycle"
+depends_on = ["hard_find_shelter"]
+priority = 2
+
+[[tasks]]
+id = "hard_recover_supplies"
+payload = "Recover useful supplies and stabilize the base"
+depends_on = ["hard_secure_food"]
+priority = 3

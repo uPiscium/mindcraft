@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
 from time import time
-
+from typing import Any
 
 EMPTY = "EMPTY"
 ASSIGNED = "ASSIGNED"
