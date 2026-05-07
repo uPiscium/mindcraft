@@ -191,7 +191,7 @@ class ConversationManager {
             await agent.self_prompter.pause();
         }
     
-        _scheduleProcessInMessage(sender, received, convo);
+        await _scheduleProcessInMessage(sender, received, convo);
     }
 
     responseScheduledFor(sender) {
@@ -231,7 +231,7 @@ class ConversationManager {
                 this._stopMonitor();
                 this.activeConversation = null;
                 if (agent.self_prompter.isPaused() && !this.inConversation()) {
-                    _resumeSelfPrompter();
+                    void _resumeSelfPrompter().catch((e) => console.error("Error resuming self prompter:", e));
                 }
             }
         }
@@ -242,7 +242,7 @@ class ConversationManager {
             this.endConversation(sender);
         }
         if (agent.self_prompter.isPaused()) {
-            _resumeSelfPrompter();
+            void _resumeSelfPrompter().catch((e) => console.error("Error resuming self prompter:", e));
         }
     }
 
@@ -281,7 +281,7 @@ async function _scheduleProcessInMessage(sender, received, convo) {
         // both are busy
         let canTalkOver = talkOverActions.some(a => agent.actions.currentActionLabel.includes(a));
         if (canTalkOver)
-            scheduleResponse(fastDelay)
+            scheduleResponse(fastDelay);
         // otherwise don't respond
     }
     else if (otherAgentBusy)

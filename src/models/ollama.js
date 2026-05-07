@@ -110,6 +110,6 @@ export class Ollama {
             ]
         });
         
-        return this.sendRequest(imageMessages, systemMessage);
+        return await this.sendRequest(imageMessages, systemMessage);
     }
 }

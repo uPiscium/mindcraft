@@ -20,7 +20,7 @@ function runAsAction (actionFn, resume = false, timeout = -1) {
         if (code_return.interrupted && !code_return.timedout)
             return;
         return code_return.message;
-    }
+    };
 
     return wrappedAction;
 }
@@ -32,7 +32,7 @@ export const actionsList = [
         params: {
             'prompt': { type: 'string', description: 'A natural language prompt to guide code generation. Make a detailed step-by-step plan.' }
         },
-        perform: async function(agent, prompt) {
+        perform: async function(agent, _) {
             // just ignore prompt - it is now in context in chat history
             if (!settings.allow_insecure_coding) { 
                 agent.openChat('newAction is disabled. Enable with allow_insecure_coding=true in settings.js');
@@ -69,7 +69,7 @@ export const actionsList = [
         description: 'Stop all chatting and self prompting, but continue current action.',
         perform: async function (agent) {
             agent.openChat('Shutting up.');
-            agent.shutUp();
+            await agent.shutUp();
             return;
         }
     },
@@ -77,14 +77,14 @@ export const actionsList = [
         name: '!restart',
         description: 'Restart the agent process.',
         perform: async function (agent) {
-            agent.cleanKill();
+            await agent.cleanKill();
         }
     },
     {
         name: '!clearChat',
         description: 'Clear the chat history.',
         perform: async function (agent) {
-            agent.history.clear();
+            await agent.history.clear();
             return agent.name + "'s chat history was cleared, starting new conversation from scratch.";
         }
     },
@@ -132,7 +132,7 @@ export const actionsList = [
         },
         perform: runAsAction(async (agent, block_type, range) => {
             if (range < 32) {
-                log(agent.bot, `Minimum search range is 32.`);
+                skills.log(agent.bot, `Minimum search range is 32.`);
                 range = 32;
             }
             await skills.goToNearestBlock(agent.bot, block_type, 4, range);
@@ -163,7 +163,7 @@ export const actionsList = [
         params: {'name': { type: 'string', description: 'The name to remember the location as.' }},
         perform: async function (agent, name) {
             const pos = agent.bot.entity.position;
-            agent.memory_bank.rememberPlace(name, pos.x, pos.y, pos.z);
+            await agent.memory_bank.rememberPlace(name, pos.x, pos.y, pos.z);
             return `Location saved as "${name}".`;
         }
     },
@@ -352,11 +352,11 @@ export const actionsList = [
         },
         perform: async function (agent, mode_name, on) {
             const modes = agent.bot.modes;
-            if (!modes.exists(mode_name))
+            if (!await modes.exists(mode_name))
             return `Mode ${mode_name} does not exist.` + modes.getDocs();
-            if (modes.isOn(mode_name) === on)
+            if (await modes.isOn(mode_name) === on)
             return `Mode ${mode_name} is already ${on ? 'on' : 'off'}.`;
-            modes.setOn(mode_name, on);
+            await modes.setOn(mode_name, on);
             return `Mode ${mode_name} is now ${on ? 'on' : 'off'}.`;
         }
     },
@@ -368,10 +368,10 @@ export const actionsList = [
         },
         perform: async function (agent, prompt) {
             if (convoManager.inConversation()) {
-                agent.self_prompter.setPromptPaused(prompt);
+                await agent.self_prompter.setPromptPaused(prompt);
             }
             else {
-                agent.self_prompter.start(prompt);
+                await agent.self_prompter.start(prompt);
             }
         }
     },
@@ -379,7 +379,7 @@ export const actionsList = [
         name: '!endGoal',
         description: 'Call when you have accomplished your goal. It will stop self-prompting and the current action. ',
         perform: async function (agent) {
-            agent.self_prompter.stop();
+            await agent.self_prompter.stop();
             return 'Self-prompting stopped.';
         }
     },
@@ -416,7 +416,7 @@ export const actionsList = [
             if (convoManager.inConversation() && !convoManager.inConversation(player_name)) 
                 convoManager.forceEndCurrentConversation();
             else if (convoManager.inConversation(player_name))
-                agent.history.add('system', 'You are already in conversation with ' + player_name + '. Don\'t use this command to talk to them.');
+                await agent.history.add('system', 'You are already in conversation with ' + player_name + '. Don\'t use this command to talk to them.');
             convoManager.startConversation(player_name, message);
         }
     },
@@ -426,8 +426,8 @@ export const actionsList = [
         params: {
             'player_name': { type: 'string', description: 'The name of the player to end the conversation with.' }
         },
-        perform: async function (agent, player_name) {
-            if (!convoManager.inConversation(player_name))
+        perform: async function (_, player_name) {
+            if (!await convoManager.inConversation(player_name))
                 return `Not in conversation with ${player_name}.`;
             convoManager.endConversation(player_name);
             return `Converstaion with ${player_name} ended.`;
@@ -477,7 +477,7 @@ export const actionsList = [
         description: 'Digs down a specified distance. Will stop if it reaches lava, water, or a fall of >=4 blocks below the bot.',
         params: {'distance': { type: 'int', description: 'Distance to dig down', domain: [1, Number.MAX_SAFE_INTEGER] }},
         perform: runAsAction(async (agent, distance) => {
-            await skills.digDown(agent.bot, distance)
+            await skills.digDown(agent.bot, distance);
         })
     },
     {

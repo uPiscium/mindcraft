@@ -1,3 +1,5 @@
+import process from 'node:process';
+
 import * as Mindcraft from '../mindcraft/mindcraft.js';
 import settings from '../../settings.js';
 import yargs from 'yargs';

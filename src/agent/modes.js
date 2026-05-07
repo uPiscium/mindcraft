@@ -1,13 +1,13 @@
 import * as skills from './library/skills.js';
 import * as world from './library/world.js';
 import * as mc from '../utils/mcdata.js';
-import settings from './settings.js'
+import settings from './settings.js';
 import convoManager from './conversation.js';
 
 async function say(agent, message) {
     agent.bot.modes.behavior_log += message + '\n';
     if (agent.shut_up || !settings.narrate_behavior) return;
-    agent.openChat(message);
+    await agent.openChat(message);
 }
 
 // a mode is a function that is called every tick to respond immediately to the world
@@ -42,34 +42,34 @@ const modes_list = [
                 }
             }
             else if (this.fall_blocks.some(name => blockAbove.name.includes(name))) {
-                execute(this, agent, async () => {
+                await execute(this, agent, async () => {
                     await skills.moveAway(bot, 2);
                 });
             }
             else if (block.name === 'lava' || block.name === 'fire' ||
                 blockAbove.name === 'lava' || blockAbove.name === 'fire') {
-                say(agent, 'I\'m on fire!');
+                await say(agent, 'I\'m on fire!');
                 // if you have a water bucket, use it
                 let waterBucket = bot.inventory.items().find(item => item.name === 'water_bucket');
                 if (waterBucket) {
-                    execute(this, agent, async () => {
+                    await execute(this, agent, async () => {
                         let success = await skills.placeBlock(bot, 'water_bucket', block.position.x, block.position.y, block.position.z);
-                        if (success) say(agent, 'Placed some water, ahhhh that\'s better!');
+                        if (success) await say(agent, 'Placed some water, ahhhh that\'s better!');
                     });
                 }
                 else {
-                    execute(this, agent, async () => {
+                    await execute(this, agent, async () => {
                         let waterBucket = bot.inventory.items().find(item => item.name === 'water_bucket');
                         if (waterBucket) {
                             let success = await skills.placeBlock(bot, 'water_bucket', block.position.x, block.position.y, block.position.z);
-                            if (success) say(agent, 'Placed some water, ahhhh that\'s better!');
+                            if (success) await say(agent, 'Placed some water, ahhhh that\'s better!');
                             return;
                         }
                         let nearestWater = world.getNearestBlock(bot, 'water', 20);
                         if (nearestWater) {
                             const pos = nearestWater.position;
                             let success = await skills.goToPosition(bot, pos.x, pos.y, pos.z, 0.2);
-                            if (success) say(agent, 'Found some water, ahhhh that\'s better!');
+                            if (success) await say(agent, 'Found some water, ahhhh that\'s better!');
                             return;
                         }
                         await skills.moveAway(bot, 5);
@@ -77,8 +77,8 @@ const modes_list = [
                 }
             }
             else if (Date.now() - bot.lastDamageTime < 3000 && (bot.health < 5 || bot.lastDamageTaken >= bot.health)) {
-                say(agent, 'I\'m dying!');
-                execute(this, agent, async () => {
+                await say(agent, 'I\'m dying!');
+                await execute(this, agent, async () => {
                     await skills.moveAway(bot, 20);
                 });
             }
@@ -120,13 +120,13 @@ const modes_list = [
             }
             const max_stuck_time = cur_dig_block?.name === 'obsidian' ? this.max_stuck_time * 2 : this.max_stuck_time;
             if (this.stuck_time > max_stuck_time) {
-                say(agent, 'I\'m stuck!');
+                await say(agent, 'I\'m stuck!');
                 this.stuck_time = 0;
-                execute(this, agent, async () => {
-                    const crashTimeout = setTimeout(() => { agent.cleanKill("Got stuck and couldn't get unstuck") }, 10000);
+                await execute(this, agent, async () => {
+                    const crashTimeout = setTimeout(() => { agent.cleanKill("Got stuck and couldn't get unstuck"); }, 10000);
                     await skills.moveAway(bot, 5);
                     clearTimeout(crashTimeout);
-                    say(agent, 'I\'m free.');
+                    await say(agent, 'I\'m free.');
                 });
             }
             this.last_time = Date.now();
@@ -146,8 +146,8 @@ const modes_list = [
         update: async function (agent) {
             const enemy = world.getNearestEntityWhere(agent.bot, entity => mc.isHostile(entity), 16);
             if (enemy && await world.isClearPath(agent.bot, enemy)) {
-                say(agent, `Aaa! A ${enemy.name.replace("_", " ")}!`);
-                execute(this, agent, async () => {
+                await say(agent, `Aaa! A ${enemy.name.replace("_", " ")}!`);
+                await execute(this, agent, async () => {
                     await skills.avoidEnemies(agent.bot, 24);
                 });
             }
@@ -162,8 +162,8 @@ const modes_list = [
         update: async function (agent) {
             const enemy = world.getNearestEntityWhere(agent.bot, entity => mc.isHostile(entity), 8);
             if (enemy && await world.isClearPath(agent.bot, enemy)) {
-                say(agent, `Fighting ${enemy.name}!`);
-                execute(this, agent, async () => {
+                await say(agent, `Fighting ${enemy.name}!`);
+                await execute(this, agent, async () => {
                     await skills.defendSelf(agent.bot, 8);
                 });
             }
@@ -178,8 +178,8 @@ const modes_list = [
         update: async function (agent) {
             const huntable = world.getNearestEntityWhere(agent.bot, entity => mc.isHuntable(entity), 8);
             if (huntable && await world.isClearPath(agent.bot, huntable)) {
-                execute(this, agent, async () => {
-                    say(agent, `Hunting ${huntable.name}!`);
+                await execute(this, agent, async () => {
+                    await say(agent, `Hunting ${huntable.name}!`);
                     await skills.attackEntity(agent.bot, huntable);
                 });
             }
@@ -203,9 +203,9 @@ const modes_list = [
                     this.noticed_at = Date.now();
                 }
                 if (Date.now() - this.noticed_at > this.wait * 1000) {
-                    say(agent, `Picking up item!`);
+                    await say(agent, `Picking up item!`);
                     this.prev_item = item;
-                    execute(this, agent, async () => {
+                    await execute(this, agent, async () => {
                         await skills.pickupNearbyItems(agent.bot);
                     });
                     this.noticed_at = -1;
@@ -227,9 +227,11 @@ const modes_list = [
         update: function (agent) {
             if (world.shouldPlaceTorch(agent.bot)) {
                 if (Date.now() - this.last_place < this.cooldown * 1000) return;
-                execute(this, agent, async () => {
+                void execute(this, agent, async () => {
                     const pos = agent.bot.entity.position;
                     await skills.placeBlock(agent.bot, 'torch', pos.x, pos.y, pos.z, 'bottom', true);
+                }).catch(err => {
+                    console.log(`Failed to place torch: ${err}`);
                 });
                 this.last_place = Date.now();
             }
@@ -245,7 +247,7 @@ const modes_list = [
         update: async function (agent) {
             const player = world.getNearestEntityWhere(agent.bot, entity => entity.type === 'player', this.distance);
             if (player) {
-                execute(this, agent, async () => {
+                await execute(this, agent, async () => {
                     // wait a random amount of time to avoid identical movements with other bots
                     const wait_time = Math.random() * 1000;
                     await new Promise(resolve => setTimeout(resolve, wait_time));

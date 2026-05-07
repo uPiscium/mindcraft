@@ -1,3 +1,5 @@
+import process from 'node:process';
+
 import { History } from './history.js';
 import { Coder } from './coder.js';
 import { VisionInterpreter } from './vision/vision_interpreter.js';
@@ -15,7 +17,7 @@ import { addBrowserViewer } from './vision/browser_viewer.js';
 import { serverProxy, sendOutputToServer } from './mindserver_proxy.js';
 import settings from './settings.js';
 import { Task } from './tasks/tasks.js';
-import { speak } from './speak.js';
+// import { speak } from './speak.js';
 import { log, validateNameFormat, handleDisconnection } from './connection_handler.js';
 
 export class Agent {
@@ -36,7 +38,7 @@ export class Agent {
         if (!nameCheck.success) {
             log(this.name, nameCheck.msg);
             process.exit(1);
-            return;
+            // return;
         }
         
         this.history = new History(this);
@@ -166,7 +168,7 @@ export class Agent {
                 console.log(this.name, 'received message from', username, ':', message);
 
                 if (convoManager.isOtherAgent(username)) {
-                    console.warn('received whisper from other bot??')
+                    console.warn('received whisper from other bot??');
                 }
                 else {
                     let translation = await handleEnglishTranslation(message);
@@ -175,7 +177,7 @@ export class Agent {
             } catch (error) {
                 console.error('Error handling message:', error);
             }
-        }
+        };
 
 		this.respondFunc = respondFunc;
 
@@ -322,7 +324,7 @@ export class Agent {
             console.log(`${this.name} full response to ${source}: ""${res}""`);
 
             if (res.trim().length === 0) {
-                console.warn('no response')
+                console.warn('no response');
                 break; // empty response ends loop
             }
 
@@ -334,7 +336,7 @@ export class Agent {
                 
                 if (!commandExists(command_name)) {
                     this.history.add('system', `Command ${command_name} does not exist.`);
-                    console.warn('Agent hallucinated command:', command_name)
+                    console.warn('Agent hallucinated command:', command_name);
                     continue;
                 }
 
@@ -396,7 +398,7 @@ export class Agent {
         }
         else {
             // otherwise, use open chat
-            this.openChat(message);
+            await this.openChat(message);
             // note that to_player could be another bot, but if we get here the conversation has ended
         }
     }
@@ -420,9 +422,9 @@ export class Agent {
             }
         }
         else {
-            if (settings.speak) {
-                speak(to_translate, this.prompter.profile.speak_model);
-            }
+            // if (settings.speak) {
+            //     speak(to_translate, this.prompter.profile.speak_model);
+            // }
             if (settings.chat_ingame) {this.bot.chat(message);}
             sendOutputToServer(this.name, message);
         }
@@ -482,7 +484,7 @@ export class Agent {
                     death_pos_text = `x: ${death_pos.x.toFixed(2)}, y: ${death_pos.y.toFixed(2)}, z: ${death_pos.x.toFixed(2)}`;
                 }
                 let dimention = this.bot.game.dimension;
-                this.handleMessage('system', `You died at position ${death_pos_text || "unknown"} in the ${dimention} dimension with the final message: '${message}'. Your place of death is saved as 'last_death_position' if you want to return. Previous actions were stopped and you have respawned.`);
+                await this.handleMessage('system', `You died at position ${death_pos_text || "unknown"} in the ${dimention} dimension with the final message: '${message}'. Your place of death is saved as 'last_death_position' if you want to return. Previous actions were stopped and you have respawned.`);
             }
         });
         this.bot.on('idle', () => {

@@ -1,12 +1,14 @@
 import subprocess
 import socketio
 import time
-import json
+
+# import json
 import os
 import atexit
 import threading
 import sys
-import signal
+# import signal
+
 
 class Mindcraft:
     def __init__(self):
@@ -16,8 +18,10 @@ class Mindcraft:
         self.log_thread = None
 
     def _log_reader(self):
-        for line in iter(self.process.stdout.readline, ''):
-            sys.stdout.write(f'[Node.js] {line}')
+        if not self.process or not self.process.stdout:
+            return
+        for line in iter(self.process.stdout.readline, ""):
+            sys.stdout.write(f"[Node.js] {line}")
             sys.stdout.flush()
 
     def init(self, port=8080):
@@ -25,24 +29,28 @@ class Mindcraft:
             return
 
         self.port = port
-        
-        node_script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'init-mindcraft.js'))
-        
-        self.process = subprocess.Popen([
-            'node',
-            node_script_path,
-            '--mindserver_port', str(self.port)
-        ], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
-        
+
+        node_script_path = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "init-mindcraft.js")
+        )
+
+        self.process = subprocess.Popen(
+            ["node", node_script_path, "--mindserver_port", str(self.port)],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
+
         self.log_thread = threading.Thread(target=self._log_reader)
         self.log_thread.daemon = True
         self.log_thread.start()
 
         atexit.register(self.shutdown)
-        time.sleep(2) # Give server time to start before connecting
+        time.sleep(2)  # Give server time to start before connecting
 
         try:
-            self.sio.connect(f'http://localhost:{self.port}')
+            self.sio.connect(f"http://localhost:{self.port}")
             self.connected = True
             print("Connected to MindServer. Mindcraft is initialized.")
         except socketio.exceptions.ConnectionError as e:
@@ -53,16 +61,16 @@ class Mindcraft:
     def create_agent(self, settings_json):
         if not self.connected:
             raise Exception("Not connected to MindServer. Call init() first.")
-        
-        profile_data = settings_json.get('profile', {})
-        
+
+        profile_data = settings_json.get("profile", {})
+
         def callback(response):
-            if response.get('success'):
+            if response.get("success"):
                 print(f"Agent '{profile_data.get('name')}' created successfully")
             else:
                 print(f"Error creating agent: {response.get('error', 'Unknown error')}")
 
-        self.sio.emit('create-agent', settings_json, callback=callback)
+        self.sio.emit("create-agent", settings_json, callback=callback)
 
     def shutdown(self):
         if self.sio.connected:
@@ -84,16 +92,21 @@ class Mindcraft:
             print("\nCtrl+C detected. Exiting...")
             self.shutdown()
 
+
 mindcraft_instance = Mindcraft()
+
 
 def init(port=8080):
     mindcraft_instance.init(port)
 
+
 def create_agent(settings_json):
     mindcraft_instance.create_agent(settings_json)
-    
+
+
 def shutdown():
     mindcraft_instance.shutdown()
+
 
 def wait():
     mindcraft_instance.wait()

@@ -1,5 +1,5 @@
 import { writeFileSync, readFileSync, mkdirSync, existsSync } from 'fs';
-import { NPCData } from './npc/data.js';
+// import { NPCData } from './npc/data.js';
 import settings from './settings.js';
 
 
@@ -51,7 +51,7 @@ export class History {
         try {
             const data = readFileSync(this.full_history_fp, 'utf8');
             let full_history = JSON.parse(data);
-            full_history.push(...to_store);
+            await full_history.push(...to_store);
             writeFileSync(this.full_history_fp, JSON.stringify(full_history, null, 4), 'utf8');
         } catch (err) {
             console.error(`Error reading ${this.name}'s full history file: ${err.message}`);
@@ -79,7 +79,7 @@ export class History {
         }
     }
 
-    async save() {
+    save() {
         try {
             const data = {
                 memory: this.memory,

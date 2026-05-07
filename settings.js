@@ -1,7 +1,9 @@
+import process from 'node:process';
+
 const settings = {
     "minecraft_version": "auto", // or specific version like "1.21.6"
-    "host": "localhost", // or "localhost", "your.ip.address.here"
-    "port": 10000, // set to -1 to automatically scan for open ports
+    "host": "10.12.1.100", // or "localhost", "your.ip.address.here"
+    "port": 40000, // set to -1 to automatically scan for open ports
     "auth": "offline", // or "microsoft"
 
     // the mindserver manages all agents and hosts the UI
@@ -61,7 +63,7 @@ const settings = {
   
     "log_all_prompts": false, // log ALL prompts to file
 
-}
+};
 
 if (process.env.SETTINGS_JSON) {
     try {

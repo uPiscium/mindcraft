@@ -2,12 +2,12 @@
   "name": "Andy",
   "model": {
     "api": "ollama",
-    "model": "sweaterdog/andy-4:micro-q8_0",
-    "url": "https://ollama.arc.upiscium.dev"
+    "model": "qwen3.6:27b",
+    "url": "https://ollama-caspar.arc.upiscium.dev"
   },
   "embedding": {
     "api": "ollama",
     "model": "embeddinggemma:latest",
-    "url": "https://ollama.arc.upiscium.dev"
+    "url": "https://ollama-balthazar.arc.upiscium.dev"
   }
 }

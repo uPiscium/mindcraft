@@ -10,7 +10,7 @@ import mc from 'minecraft-protocol';
  * @returns {Promise<Array>} - A Promise that resolves to an array of server info objects.
  */
 export async function serverInfo(ip, port, timeout = 1000, verbose = false) {
-    return new Promise((resolve) => {
+    return await new Promise((resolve) => {
 
         let timeoutId = setTimeout(() => {
             if (verbose)

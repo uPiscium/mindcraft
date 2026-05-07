@@ -1,3 +1,5 @@
+import process from 'node:process';
+
 import { Agent } from '../agent/agent.js';
 import { serverProxy } from '../agent/mindserver_proxy.js';
 import yargs from 'yargs';
@@ -37,7 +39,7 @@ const argv = yargs(args)
     })
     .argv;
 
-(async () => {
+void (async () => {
     try {
         console.log('Connecting to MindServer');
         await serverProxy.connect(argv.name, argv.port);
@@ -51,4 +53,9 @@ const argv = yargs(args)
         console.error(error.stack);
         process.exit(1);
     }
-})();
+})().catch((error) => {
+    console.error('Unexpected error in agent process:');
+    console.error(error.message);
+    console.error(error.stack);
+    process.exit(1);
+});
