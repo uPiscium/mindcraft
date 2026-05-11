@@ -2,6 +2,8 @@
 import globals from "globals";
 import pluginJs from "@eslint/js";
 import noFloatingPromise from "eslint-plugin-no-floating-promise";
+import tsParser from "@typescript-eslint/parser";
+import tsPlugin from "@typescript-eslint/eslint-plugin";
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
@@ -9,6 +11,31 @@ export default [
   pluginJs.configs.recommended,
 
   // Then override or customize specific rules
+  {
+    files: ["**/*.ts", "**/*.tsx"],
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: {
+        ecmaVersion: 2021,
+        sourceType: "module",
+      },
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+        Compartment: "readonly",
+        lockdown: "readonly",
+        harden: "readonly",
+      },
+    },
+    plugins: {
+      "@typescript-eslint": tsPlugin,
+      "no-floating-promise": noFloatingPromise,
+    },
+    rules: {
+      "no-undef": "off",
+      "@typescript-eslint/no-explicit-any": "error",
+    },
+  },
   {
     plugins: {
       "no-floating-promise": noFloatingPromise,
