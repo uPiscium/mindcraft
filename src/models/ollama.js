@@ -2,6 +2,7 @@ import { strictFormat } from '../utils/text.js';
 
 export class Ollama {
     static prefix = 'ollama';
+    static loggedFailures = new Set();
     constructor(model_name, url, params) {
         this.model_name = model_name;
         this.params = params;
@@ -89,8 +90,12 @@ export class Ollama {
                 throw new Error(`Ollama Status: ${res.status}`);
             }
         } catch (err) {
-            console.error('Failed to send Ollama request.');
-            console.error(err);
+            const failureKey = `${this.url}|${endpoint}|${err?.message || String(err)}`;
+            if (!Ollama.loggedFailures.has(failureKey)) {
+                Ollama.loggedFailures.add(failureKey);
+                console.error('Failed to send Ollama request.');
+                console.error(err);
+            }
         }
         return data;
     }

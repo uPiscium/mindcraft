@@ -1,5 +1,5 @@
 import minecraftData from 'minecraft-data';
-import settings from '../agent/settings';
+import settings from '../agent/settings.js';
 import { createBot } from 'mineflayer';
 import prismarine_items from 'prismarine-item';
 import { pathfinder } from 'mineflayer-pathfinder';
