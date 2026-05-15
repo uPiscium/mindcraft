@@ -40,10 +40,10 @@ export function resolveBootstrapSettings(baseSettings, args, env, readTaskFile =
   }
 
   if (env.MINECRAFT_PORT) {
-    settings.port = env.MINECRAFT_PORT;
+    settings.port = Number(env.MINECRAFT_PORT);
   }
   if (env.MINDSERVER_PORT) {
-    settings.mindserver_port = env.MINDSERVER_PORT;
+    settings.mindserver_port = Number(env.MINDSERVER_PORT);
   }
   if (env.PROFILES && JSON.parse(env.PROFILES).length > 0) {
     settings.profiles = JSON.parse(env.PROFILES);
@@ -55,13 +55,13 @@ export function resolveBootstrapSettings(baseSettings, args, env, readTaskFile =
     settings.blocked_actions = JSON.parse(env.BLOCKED_ACTIONS);
   }
   if (env.MAX_MESSAGES) {
-    settings.max_messages = env.MAX_MESSAGES;
+    settings.max_messages = Number(env.MAX_MESSAGES);
   }
   if (env.NUM_EXAMPLES) {
-    settings.num_examples = env.NUM_EXAMPLES;
+    settings.num_examples = Number(env.NUM_EXAMPLES);
   }
   if (env.LOG_ALL) {
-    settings.log_all_prompts = env.LOG_ALL;
+    settings.log_all_prompts = env.LOG_ALL === 'true';
   }
 
   return settings;

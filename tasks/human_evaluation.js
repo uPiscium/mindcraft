@@ -1,3 +1,4 @@
+import process from 'node:process';
 import mineflayer from 'mineflayer';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
@@ -61,7 +62,7 @@ bot.on('spawn', async () => {
     bot.chat(`/tp andy ${usernames[0]}`);
     await new Promise(resolve => setTimeout(resolve, 5000));
     // console.log(taskData);
-    console.log(`Task id is ${task_id}`)
+    console.log(`Task id is ${task_id}`);
     console.log(task_id);
     const task = taskData[task_id];
     console.log(task);

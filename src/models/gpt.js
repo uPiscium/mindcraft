@@ -87,7 +87,11 @@ export class GPT {
         return res;
     }
 
-    async sendVisionRequest(messages, systemMessage, imageBuffer) {
+    async chat(turns, systemMessage, stop_seq='***') {
+        return await this.sendRequest(turns, systemMessage, stop_seq);
+    }
+
+    sendVisionRequest(messages, systemMessage, imageBuffer) {
         const imageMessages = [...messages];
         imageMessages.push({
             role: "user",
@@ -121,7 +125,7 @@ const sendAudioRequest = async (text, model, voice, url) => {
         model: model,
         voice: voice,
         input: text
-    }
+    };
 
     let config = {};
 
@@ -136,12 +140,12 @@ const sendAudioRequest = async (text, model, voice, url) => {
     const openai = new OpenAIApi(config);
 
     const mp3 = await openai.audio.speech.create(payload);
-    const buffer = Buffer.from(await mp3.arrayBuffer());
+    const buffer = new Uint8Array(await mp3.arrayBuffer());
     const base64 = buffer.toString("base64");
     return base64;
-}
+};
 
 export const TTSConfig = {
     sendAudioRequest: sendAudioRequest,
     baseUrl: 'https://api.openai.com/v1',
-}
+};

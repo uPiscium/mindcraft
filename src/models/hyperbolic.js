@@ -108,7 +108,11 @@ export class Hyperbolic {
         return finalRes;
     }
 
-    async embed(text) {
+    async chat(turns, systemMessage, stopSeq = '***') {
+        return await this.sendRequest(turns, systemMessage, stopSeq);
+    }
+
+    embed(text) {
         throw new Error('Embeddings are not supported by Hyperbolic.');
     }
 }

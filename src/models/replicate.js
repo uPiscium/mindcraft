@@ -50,6 +50,10 @@ export class ReplicateAPI {
 		return res;
 	}
 
+	async chat(turns, systemMessage) {
+		return await this.sendRequest(turns, systemMessage);
+	}
+
 	async embed(text) {
 		const output = await this.replicate.run(
 			this.model_name || "mark3labs/embeddings-gte-base:d619cff29338b9a37c3d06605042e1ff0594a8c3eff0175fd6967f5643fc4d47",

@@ -10,14 +10,14 @@ const bot = mineflayer.createBot({
     // password: 'your_bot_password' // Only if the server has online-mode=true
 });
 
-bot.on('spawn', async () => {
+bot.on('spawn', () => {
     console.log("Bot spawned. Starting blueprint check...");
     // set this to be minX, minY, minZ
     const startCoord = {
         x: -124, 
         y: 1, 
         z: 133,
-    }
+    };
     bot.chat(`/tp andy ${startCoord.x} ${startCoord.y} ${startCoord.z}`);
     const yOffset = 2;
     const xOffset = 30;
@@ -41,7 +41,7 @@ bot.on('spawn', async () => {
         console.log("Blueprint generated:", task_blueprint.levels[0].coordinates);
 
         const task = blueprintToTask(task_blueprint, 3);
-        const task_collection = {}
+        const task_collection = {};
         task_collection[task_name] = task;
 
         fs.writeFileSync(taskFilePath, JSON.stringify(task_collection, null, 2), (err) => {

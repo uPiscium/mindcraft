@@ -65,7 +65,11 @@ export class GLHF {
         return finalRes;
     }
 
-    async embed(text) {
+    async chat(turns, systemMessage, stop_seq = '***') {
+        return await this.sendRequest(turns, systemMessage, stop_seq);
+    }
+
+    embed(text) {
         throw new Error('Embeddings are not supported by glhf.');
     }
 }

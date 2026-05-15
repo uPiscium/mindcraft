@@ -53,7 +53,11 @@ export class OpenRouter {
         return res;
     }
 
-    async sendVisionRequest(messages, systemMessage, imageBuffer) {
+    async chat(turns, systemMessage, stop_seq='*') {
+        return await this.sendRequest(turns, systemMessage, stop_seq);
+    }
+
+    sendVisionRequest(messages, systemMessage, imageBuffer) {
         const imageMessages = [...messages];
         imageMessages.push({
             role: "user",
@@ -71,7 +75,7 @@ export class OpenRouter {
         return this.sendRequest(imageMessages, systemMessage);
     }
 
-    async embed(text) {
+    embed(text) {
         throw new Error('Embeddings are not supported by Openrouter.');
     }
 }

@@ -69,6 +69,10 @@ export class Ollama {
         return finalRes;
     }
 
+    async chat(turns, systemMessage) {
+        return await this.sendRequest(turns, systemMessage);
+    }
+
     async embed(text) {
         let model = this.model_name || 'embeddinggemma';
         let body = { model: model, input: text };

@@ -80,7 +80,11 @@ export class HuggingFace {
     return finalRes;
   }
 
-  async embed(text) {
+  async chat(turns, systemMessage) {
+    return await this.sendRequest(turns, systemMessage);
+  }
+
+  embed(text) {
     throw new Error('Embeddings are not supported by HuggingFace.');
   }
 }

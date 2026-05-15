@@ -16,8 +16,8 @@ test('resolveBootstrapSettings merges env and cli input', () => {
   );
 
   assert.equal(result.profiles[0], 'cli.json');
-  assert.equal(result.mindserver_port, '9090');
-  assert.equal(result.log_all_prompts, 'true');
+  assert.equal(result.mindserver_port, 9090);
+  assert.equal(result.log_all_prompts, true);
 });
 
 test('resolveBootstrapSettings loads task by task id', () => {

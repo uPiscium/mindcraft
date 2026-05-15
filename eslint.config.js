@@ -16,7 +16,7 @@ export default [
     languageOptions: {
       parser: tsParser,
       parserOptions: {
-        ecmaVersion: 2021,
+        ecmaVersion: 2022,
         sourceType: "module",
       },
       globals: {
@@ -40,14 +40,15 @@ export default [
     plugins: {
       "no-floating-promise": noFloatingPromise,
     },
-    languageOptions: {
-      globals: {
-        ...globals.browser,
-        Compartment: "readonly",
-        lockdown: "readonly",
-        harden: "readonly",
-      },
-      ecmaVersion: 2021,
+      languageOptions: {
+        globals: {
+          ...globals.browser,
+          ...globals.node,
+          Compartment: "readonly",
+          lockdown: "readonly",
+          harden: "readonly",
+        },
+      ecmaVersion: 2022,
       sourceType: "module",
     },
     rules: {

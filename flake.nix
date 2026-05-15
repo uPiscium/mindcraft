@@ -13,6 +13,7 @@
       } {
         buildInputs = with pkgs; [
           nodejs_22
+          just
           uv
           python3
         ];

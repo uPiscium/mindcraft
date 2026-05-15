@@ -30,12 +30,12 @@ export class DeepSeek {
 
         let res = null;
         try {
-            console.log('Awaiting deepseek api response...')
+            console.log('Awaiting deepseek api response...');
             // console.log('Messages:', messages);
             let completion = await this.openai.chat.completions.create(pack);
             if (completion.choices[0].finish_reason == 'length')
                 throw new Error('Context length exceeded'); 
-            console.log('Received.')
+            console.log('Received.');
             res = completion.choices[0].message.content;
         }
         catch (err) {
@@ -50,10 +50,12 @@ export class DeepSeek {
         return res;
     }
 
-    async embed(text) {
+    async chat(turns, systemMessage, stop_seq='***') {
+        return await this.sendRequest(turns, systemMessage, stop_seq);
+    }
+
+    embed(text) {
         throw new Error('Embeddings are not supported by Deepseek.');
     }
 }
-
-
 

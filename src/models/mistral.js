@@ -16,7 +16,7 @@ export class Mistral {
         }
 
         if (!getKey("MISTRAL_API_KEY")) {
-            throw new Error("Mistral API Key missing, make sure to set MISTRAL_API_KEY in settings.json")
+            throw new Error("Mistral API Key missing, make sure to set MISTRAL_API_KEY in settings.json");
         }
 
         this.#client = new MistralClient(
@@ -48,7 +48,7 @@ export class Mistral {
             ];
             messages.push(...strictFormat(turns));
 
-            console.log('Awaiting mistral api response...')
+            console.log('Awaiting mistral api response...');
             const response  = await this.#client.chat.complete({
                 model,
                 messages,
@@ -68,7 +68,11 @@ export class Mistral {
         return result;
     }
 
-    async sendVisionRequest(messages, systemMessage, imageBuffer) {
+    async chat(turns, systemMessage) {
+        return await this.sendRequest(turns, systemMessage);
+    }
+
+    sendVisionRequest(messages, systemMessage, imageBuffer) {
         const imageMessages = [...messages];
         imageMessages.push({
             role: "user",

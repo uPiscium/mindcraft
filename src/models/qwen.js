@@ -49,6 +49,10 @@ export class Qwen {
         return res;
     }
 
+    async chat(turns, systemMessage, stop_seq='***') {
+        return await this.sendRequest(turns, systemMessage, stop_seq);
+    }
+
     // Why random backoff?
     // With a 30 requests/second limit on Alibaba Qwen's embedding service,
     // random backoff helps maximize bandwidth utilization.

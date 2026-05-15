@@ -1,4 +1,4 @@
-import Groq from 'groq-sdk'
+import Groq from 'groq-sdk';
 import { getKey } from '../utils/keys.js';
 
 // THIS API IS NOT TO BE CONFUSED WITH GROK!
@@ -71,7 +71,11 @@ export class GroqCloudAPI {
         return res;
     }
 
-    async sendVisionRequest(messages, systemMessage, imageBuffer) {
+    async chat(turns, systemMessage, stop_seq = null) {
+        return await this.sendRequest(turns, systemMessage, stop_seq);
+    }
+
+    sendVisionRequest(messages, systemMessage, imageBuffer) {
         const imageMessages = messages.filter(message => message.role !== 'system');
         imageMessages.push({
             role: "user",
@@ -89,7 +93,7 @@ export class GroqCloudAPI {
         return this.sendRequest(imageMessages);
     }
 
-    async embed(_) {
+    embed(_) {
         throw new Error('Embeddings are not supported by Groq.');
     }
 }
