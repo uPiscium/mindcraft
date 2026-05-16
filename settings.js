@@ -2,7 +2,7 @@ import process from 'node:process';
 
 const settings = {
     "minecraft_version": "auto", // or specific version like "1.21.6"
-    "host": "10.12.1.100", // or "localhost", "your.ip.address.here"
+    "host": "10.12.1.200", // or "localhost", "your.ip.address.here"
     "port": 40000, // set to -1 to automatically scan for open ports
     "auth": "offline", // or "microsoft"
 
