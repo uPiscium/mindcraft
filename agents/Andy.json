@@ -2,7 +2,7 @@
   "name": "Andy",
   "model": {
     "api": "ollama",
-    "model": "qwen3.6:27b",
+    "model": "gemma4:e4b",
     "url": "https://ollama-caspar.arc.upiscium.dev"
   },
   "embedding": {
